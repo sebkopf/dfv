@@ -1,9 +1,20 @@
 Package: dfv
 Type: Package
-Title: What the package does (short line)
+Title: Data Frame Viewer.
 Version: 1.0
 Date: 2013-11-01
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Authors@R: c(
+  person("Sebastian", "Kopf", role = c("aut", "cre"), email = "seb.kopf@gmail.com"))
+Description: GUI to facilitate getting started with using data frames and ggplot to explore data.
+Depends:
+    R (>= 2.15),  
+    ggplot2,
+    gWidgets, 
+    RGtk2
+License: GPL (>= 2)
+Collate:
+  'BaseGUI.R'
+  'DataFrameViewerGUI.R'
+  'DataFrame.R'
+  'Module.R'
+  'dfv.R'
