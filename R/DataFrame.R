@@ -9,6 +9,23 @@ DataFrame <- setRefClass(
     settings = 'list'
   ), 
   methods = list(
+    initialize = function(...) {
+      callSuper(...)
+      
+      ### default setting for a data frame
+      setSettings(
+        wsVariable = paste0(class(.self), "_saved")
+      )
+    },
+    
+    saveToWorkspace = function() {
+      message("Saving data and settings to global variable ", getSetting('wsVariable'), ".")
+      assign(getSetting('wsVariable'), list(
+          data = data,
+          settings = settings
+        ), envir=.GlobalEnv)
+      save.image()
+    },
     
     getSetting = function(id) {
       return (settings[[id]])

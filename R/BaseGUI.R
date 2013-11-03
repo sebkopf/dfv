@@ -4,6 +4,7 @@
 setGeneric("getWidget", function(gui, module, id) standardGeneric("getWidget"))
 setGeneric("setWidgets", function(gui, module, ...) standardGeneric("setWidgets"))
 setGeneric("getSetting", function(gui, module, id) standardGeneric("getSetting"))
+setGeneric("setSettings", function(gui, module, ...) standardGeneric("setSettings"))
 
 # making the gui
 setGeneric("makeGUI", function(gui, module) standardGeneric("makeGUI"))
@@ -223,7 +224,9 @@ setMethod("getSetting", "BaseGUI", function(gui, module, id) {
   return(module$getSetting(id))
 })
 
-#FIXME: implement setSettings!
+setMethod("setSettings", "BaseGUI", function(gui, module, ...) {
+  return(module$setSettings(id, ...))
+})
 
 ###################################
 # Getting and Setting key widgets #

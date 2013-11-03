@@ -9,6 +9,10 @@ Description: GUI to facilitate getting started with using data frames and ggplot
 Depends:
     R (>= 2.15),  
     ggplot2,
+    reshape2,
+    plyr,
+    psych,
+    scales,
     gWidgets, 
     RGtk2
 License: GPL (>= 2)
