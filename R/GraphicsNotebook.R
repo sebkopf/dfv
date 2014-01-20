@@ -3,7 +3,9 @@ GraphicsNotebook <- setRefClass(
   'GraphicsNotebook',
   contains = 'GuiElementDataFrame', 
   fields = list(
-    icons = 'list'
+    tab = 'GraphicsNotebookTab',
+    icons = 'list', # keeps track of main icons this GuiElement uses
+    handlers = 'list' # handlers that the gui element needs to keep track of
   ),
   methods = list(
     initialize = function(...) {
@@ -21,22 +23,98 @@ GraphicsNotebook <- setRefClass(
       setSettings(
         defaultTabLabel = "Plot"
       )
+      
+      ### default data
+      setData(
+        nb = 0, # which index of the notebook is selected (none by default)
+        tabIDs = NULL, # which tab IDs exist (none by default)
+        activeTabID = 0 # whch tab ID is selected
+      )
     },
     
+    # 'Returns the currently active tab object (GraphicsNotebookTab)
+    getActiveTabID = function() ,
+    getActiveTab = function() return (getElements(paste0('tab', data$activeTabID))),
+    
+    # 'Excepts a container in ...
     makeGUI = function(...) {
-      message("overwrite!!! test it out again")
+      # plots notebook
+      widgets$nb <<- gnotebook(cont=list(...)$container, expand=TRUE)
+      handlers$nb.changedHandler <<- addHandlerChanged(widgets$nb, handler=function(h,...) selectPlotTab(h$pageno))
+      for (tabID in data$tabIDs[data$tabIDs > 0])
+        newPlotTab(tabID = tabID)
     },
     
-    openPlotTab = function() {
-      message("NEW PLOT TAB")
+    # 'Creates the standard tab by default
+    newPlotTab = function(tabID, newTab = tab$copy()) {
+      # block handlers
+      blockHandler(widgets$nb, handlers$nb.changedHandler)
+      
+      # determine tab id
+      if (missing(tabID)) {
+        tabID <- (max(data$tabIDs) + 1)
+        data$tabIDs <<- c(data$tabIDs, tabID)
+      }
+      
+      # add new tab to elements
+      if (is.null(newTab$getData('label'))) # no label
+        newTab$setData(label = paste(settings$defaultTabLabel, tabID))
+      l <- list()
+      l[[paste0('tab', tabID)]] <- newTab
+      setElements(l, passSettings = FALSE) # Note: the tab settings can not be changed by the user, only tab data
+      
+      # make GUI for new plot tab
+      dmsg("Adding GraphicsNotebook Tab with TABID: ", tabID)
+      newTab$makeGUI(nb = widgets$nb)
+      
+      # unblock handlers
+      unblockHandler(widgets$nb, handlers$nb.changedHandler)      
     },
-    
+
+    # 'Close active tab
     closePlotTab = function() {
-      message("CLOSE PLOT TAB")
+        
+        #blockHandler(widgets$nb, handlers$nb.changedHandler)
+        #removeElements(paste0('tab', data$activeTabID)) # remove tab
+        #unblockHandler(widgets$nb, handlers$nb.changedHandler)
+        #selectPlotTab(getWidgetValue('nb'))
     },
     
+    # delete plot
+    # (deletes specific plot if index is passed in otherwise just the currently selected ones)
+    # pn.deletePlotTab<-function(pn, index=NULL, loadHandler=NULL) {
+    #   if (!is.null(index))
+    #     svalue(pn$plot.nb)<-index
+    #   else
+    #     index<-svalue(pn$plot.nb)
+    #   blockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # block changed handler
+    #   dispose(pn$plot.nb) #remove plot
+    #   tag(pn$plot.nb, "tabs")[[index]]<-NULL # remove plot object
+    #   unblockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # unblock changed handler
+    #   pn.selectPlotTab(pn, svalue(pn$plot.nb), loadHandler=loadHandler)
+    # }
+    
+    selectPlotTab = function(index) {
+      if (index > 0 && index <= length(widgets$nb)) {
+        data$activeTabID <<- data$tabIDs[index+1] # +1 because there is always a tabID = 0 still around
+        dmsg("Selecting GraphicsNotebook tab index ", index, ", TABID ", data$activeTabID)
+        
+        # make sure the tab is selected (but don't refire changeHandler)
+        blockHandler(widgets$nb, handlers$nb.changedHandler)
+        loadWidgets(nb = index)
+        unblockHandler(widgets$nb, handlers$nb.changedHandler)
+        
+        # load
+        loadPlotTab()
+      }
+    },
+    
+    #' load plot tab (always loads activate tab)
     loadPlotTab = function() {
-      message("LOAD PLOT TAB")
+      dmsg("\tLoading active tab with Tab ID ", data$activeTabID)
+      
+      # activate the tabs plot
+      getActiveTab()$activateGraphicsDevice()
     },
     
     selectPlot = function() {
@@ -53,18 +131,6 @@ GraphicsNotebook <- setRefClass(
     
     printPlot = function() {
       message("PRINT PLOT")
-    },
-    
-    getActions = function() {
-      list(
-        #aNewPlot = list(label="New Plot", icon="gtk-page-setup", handler=function(...) pn.newPlotTab(pn, tabObj=newPlotObj, eventHandlers=plotEventHandlers, loadHandler=newPlotObjLoadHandler, label=paste("Plot", length(pn$plot.nb)+1, sep="")) ),
-        open = list(label="New Plot", icon="gtk-page-setup", handler=function(...) openPlotTab()),
-        #aClosePlot = list(label="Close Plot", icon="gtk-cancel", handler=function(...) pn.deletePlotTab(pn, loadHandler=plotObjLoadHandler)), 
-        #savePlot = list(label="Save Plot", icon="gtk-save-as", handler=function(...) pn.savePlotGUI(pn, index=svalue(pn$plot.nb))), 
-        save = list(label="Save Plot", icon="gtk-save-as", handler=function(...) savePlot()) #, 
-        #aPrintPlot = list(label="Print Plot", icon="gtk-print", handler=function(...) pn.printPlot(pn, index=svalue(pn$plot.nb))), 
-        #aSaveAll = list(label="Save All", icon="gtk-harddisk", handler=function(...) pn.savePlotGUI(pn))
-      )
     }
   )
 )
@@ -171,66 +237,66 @@ pn.printPlot<-function(pn, index, width=8, height=6) {
 # provide more detailed plot object if keeping other parametrs is desired
 # add event handlers to the plot as needed, currently supported: "droptarget", "Clicked", "Changed", "Rightclick", "MouseMotion", "RightlickMousePopupmenu" 
 # --> pass like this plotEventHandlers=list(droptarget=fun, clicked=fun)
-pn.newPlotTab<-function(pn, tabObj=NULL, label="Plot", loadHandler=NULL, eventHandlers=list()) {
-  # block handlers
-  blockHandler(pn$plot.nb, pn$plot.nb.changedHandler)
-  
-  # make new tab
-  grp<-ggroup(cont=pn$plot.nb, horizontal=FALSE, label=label)
-  if (pn$enablePlotLabel)
-    addHandlerKeystroke(gedit(label, cont=grp), handler=function(h,...) {pn.changePlotTabName(pn, svalue(h$obj))})
-  gg<-ggraphics(cont=grp)
-  blockHandler(obj=gg) # disable automatic 2nd mouse button popup handler (for save and copy)
-  
-  # event handlers
-  if (!is.null(eventHandlers$droptarget))
-    adddroptarget(gg, targetType="object", handler=eventHandlers$droptarget)
-  if (!is.null(eventHandlers$Clicked))
-    addHandlerClicked(gg, handler=eventHandlers$Clicked)
-  if (!is.null(eventHandlers$Changed))
-    addHandlerChanged(gg, handler=eventHandlers$Changed)
-  if (!is.null(eventHandlers$Rightclick))
-    addHandlerRightclick(gg, handler=eventHandlers$Rightclick)
-  if (!is.null(eventHandlers$MouseMotion))
-    addHandlerMouseMotion(gg, handler=eventHandlers$MouseMotion)
-  if (!is.null(eventHandlers$RightlickMousePopupmenu))
-    add3rdMousePopupmenu(obj=gg, menulist=eventHandlers$RightlickMousePopupmenu)
-  
-  # make new object
-  if (is.null(tabObj))
-    tabObj<-list() # new object
-  tabObj$gg<-gg # store the graphics object
-  
-  if (length(pn$plot.nb) == 1) 
-    tag(pn$plot.nb, "tabs")<-list()
-  tag(pn$plot.nb, "tabs")[[length(pn$plot.nb)]]<-tabObj # add new object
-  
-  # load
-  if (!is.null(loadHandler))
-    do.call(loadHandler, list(obj=tabObj))
-  
-  # unblock handlers
-  unblockHandler(pn$plot.nb, pn$plot.nb.changedHandler)
-}
+# pn.newPlotTab<-function(pn, tabObj=NULL, label="Plot", loadHandler=NULL, eventHandlers=list()) {
+#   # block handlers
+#   blockHandler(pn$plot.nb, pn$plot.nb.changedHandler)
+#   
+#   # make new tab
+#   grp<-ggroup(cont=pn$plot.nb, horizontal=FALSE, label=label)
+#   if (pn$enablePlotLabel)
+#     addHandlerKeystroke(gedit(label, cont=grp), handler=function(h,...) {pn.changePlotTabName(pn, svalue(h$obj))})
+#   gg<-ggraphics(cont=grp)
+#   blockHandler(obj=gg) # disable automatic 2nd mouse button popup handler (for save and copy)
+#   
+#   # event handlers
+#   if (!is.null(eventHandlers$droptarget))
+#     adddroptarget(gg, targetType="object", handler=eventHandlers$droptarget)
+#   if (!is.null(eventHandlers$Clicked))
+#     addHandlerClicked(gg, handler=eventHandlers$Clicked)
+#   if (!is.null(eventHandlers$Changed))
+#     addHandlerChanged(gg, handler=eventHandlers$Changed)
+#   if (!is.null(eventHandlers$Rightclick))
+#     addHandlerRightclick(gg, handler=eventHandlers$Rightclick)
+#   if (!is.null(eventHandlers$MouseMotion))
+#     addHandlerMouseMotion(gg, handler=eventHandlers$MouseMotion)
+#   if (!is.null(eventHandlers$RightlickMousePopupmenu))
+#     add3rdMousePopupmenu(obj=gg, menulist=eventHandlers$RightlickMousePopupmenu)
+#   
+#   # make new object
+#   if (is.null(tabObj))
+#     tabObj<-list() # new object
+#   tabObj$gg<-gg # store the graphics object
+#   
+#   if (length(pn$plot.nb) == 1) 
+#     tag(pn$plot.nb, "tabs")<-list()
+#   tag(pn$plot.nb, "tabs")[[length(pn$plot.nb)]]<-tabObj # add new object
+#   
+#   # load
+#   if (!is.null(loadHandler))
+#     do.call(loadHandler, list(obj=tabObj))
+#   
+#   # unblock handlers
+#   unblockHandler(pn$plot.nb, pn$plot.nb.changedHandler)
+# }
 
 # change plot tab name (not stored in object)
-pn.changePlotTabName<-function(pn, label) {
-  names(pn$plot.nb)[svalue(pn$plot.nb)]<-label
-}
+# pn.changePlotTabName<-function(pn, label) {
+#   names(pn$plot.nb)[svalue(pn$plot.nb)]<-label
+# }
 
 # delete plot
 # (deletes specific plot if index is passed in otherwise just the currently selected ones)
-pn.deletePlotTab<-function(pn, index=NULL, loadHandler=NULL) {
-  if (!is.null(index))
-    svalue(pn$plot.nb)<-index
-  else
-    index<-svalue(pn$plot.nb)
-  blockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # block changed handler
-  dispose(pn$plot.nb) #remove plot
-  tag(pn$plot.nb, "tabs")[[index]]<-NULL # remove plot object
-  unblockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # unblock changed handler
-  pn.selectPlotTab(pn, svalue(pn$plot.nb), loadHandler=loadHandler)
-}
+# pn.deletePlotTab<-function(pn, index=NULL, loadHandler=NULL) {
+#   if (!is.null(index))
+#     svalue(pn$plot.nb)<-index
+#   else
+#     index<-svalue(pn$plot.nb)
+#   blockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # block changed handler
+#   dispose(pn$plot.nb) #remove plot
+#   tag(pn$plot.nb, "tabs")[[index]]<-NULL # remove plot object
+#   unblockHandler(pn$plot.nb, pn$plot.nb.changedHandler) # unblock changed handler
+#   pn.selectPlotTab(pn, svalue(pn$plot.nb), loadHandler=loadHandler)
+# }
 
 # set plot tab specifrically
 pn.setPlotTab<-function(pn, plotI, loadHandler=NULL) {
@@ -239,13 +305,13 @@ pn.setPlotTab<-function(pn, plotI, loadHandler=NULL) {
 }
 
 #select plot
-pn.selectPlotTab<-function(pn, plotI, loadHandler=NULL) {
-  if (plotI<=length(tag(pn$plot.nb, "tabs"))) { # make sure this is not when adding a new plot #FIXME
-    pn.activatePlot(pn, plotI)
-    if (!is.null(loadHandler))
-      do.call(loadHandler, list(obj=pn.getPlotTabParam(pn, plotI)))
-  }
-}
+# pn.selectPlotTab<-function(pn, plotI, loadHandler=NULL) {
+#   if (plotI<=length(tag(pn$plot.nb, "tabs"))) { # make sure this is not when adding a new plot #FIXME
+#     pn.activatePlot(pn, plotI)
+#     if (!is.null(loadHandler))
+#       do.call(loadHandler, list(obj=pn.getPlotTabParam(pn, plotI)))
+#   }
+# }
 
 # activate graphics widget of a plot index
 pn.activatePlot<-function(pn, plotI) {
