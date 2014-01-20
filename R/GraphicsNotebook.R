@@ -27,32 +27,32 @@ GraphicsNotebook <- setRefClass(
       ### default data
       setData(
         nb = 0, # which index of the notebook is selected (none by default)
-        tabIDs = NULL, # which tab IDs exist (none by default)
-        activeTabID = 0 # whch tab ID is selected
+        tabIDs = NULL # which tab IDs exist (none by default)
       )
     },
     
     # 'Returns the currently active tab object (GraphicsNotebookTab)
-    getActiveTabID = function() ,
-    getActiveTab = function() return (getElements(paste0('tab', data$activeTabID))),
+    getActiveTab = function() return (getElements(paste0('tab', data$tabIDs[data$nb]))),
     
     # 'Excepts a container in ...
     makeGUI = function(...) {
       # plots notebook
       widgets$nb <<- gnotebook(cont=list(...)$container, expand=TRUE)
       handlers$nb.changedHandler <<- addHandlerChanged(widgets$nb, handler=function(h,...) selectPlotTab(h$pageno))
-      for (tabID in data$tabIDs[data$tabIDs > 0])
-        newPlotTab(tabID = tabID)
+      for (tabID in data$tabIDs)
+        newPlotTab(tabID = tabID, select = FALSE)
     },
     
     # 'Creates the standard tab by default
-    newPlotTab = function(tabID, newTab = tab$copy()) {
+    # '@param select - determines whether the selectPlotTab method will be executed after tab creation 
+    # '(widgets on the tab  that have settings or data keys associated with them will still be filled automatically if the parents $loadWidgets is executed)
+    newPlotTab = function(tabID, newTab = tab$copy(), select = TRUE) {
       # block handlers
       blockHandler(widgets$nb, handlers$nb.changedHandler)
       
       # determine tab id
       if (missing(tabID)) {
-        tabID <- (max(data$tabIDs) + 1)
+        tabID <- (max(c(0, data$tabIDs)) + 1)
         data$tabIDs <<- c(data$tabIDs, tabID)
       }
       
@@ -69,15 +69,26 @@ GraphicsNotebook <- setRefClass(
       
       # unblock handlers
       unblockHandler(widgets$nb, handlers$nb.changedHandler)      
+      
+      # select plot tab
+      if (select)
+        selectPlotTab(getWidgetValue('nb'))
     },
 
     # 'Close active tab
     closePlotTab = function() {
-        
-        #blockHandler(widgets$nb, handlers$nb.changedHandler)
-        #removeElements(paste0('tab', data$activeTabID)) # remove tab
-        #unblockHandler(widgets$nb, handlers$nb.changedHandler)
-        #selectPlotTab(getWidgetValue('nb'))
+        if ( (index <- data$nb) > 0) {
+          dmsg("Closing GraphicsNotebook tab index ", index, " TABID ", data$tabIDs[index])
+          blockHandler(widgets$nb, handlers$nb.changedHandler)
+          removeElements(paste0('tab', data$tabIDs[index])) # remove tab element
+          dispose(widgets$nb) #remove tab
+          data$tabIDs <<- data$tabIDs[-index] # remove ID entry
+          unblockHandler(widgets$nb, handlers$nb.changedHandler)
+          
+          # reselect whichever tab is auto selected (default jumps back to 0)
+          setData('nb' = 0)
+          selectPlotTab(getWidgetValue('nb'))
+        }
     },
     
     # delete plot
@@ -95,13 +106,13 @@ GraphicsNotebook <- setRefClass(
     # }
     
     selectPlotTab = function(index) {
-      if (index > 0 && index <= length(widgets$nb)) {
-        data$activeTabID <<- data$tabIDs[index+1] # +1 because there is always a tabID = 0 still around
-        dmsg("Selecting GraphicsNotebook tab index ", index, ", TABID ", data$activeTabID)
+      if (index > 0 && index <= length(widgets$nb)) { # check for legal indices
+        dmsg("Selecting GraphicsNotebook tab index ", index, ", TABID ", data$tabIDs[index])
         
         # make sure the tab is selected (but don't refire changeHandler)
         blockHandler(widgets$nb, handlers$nb.changedHandler)
-        loadWidgets(nb = index)
+        setData('nb' = index)
+        loadWidgets('nb')
         unblockHandler(widgets$nb, handlers$nb.changedHandler)
         
         # load
@@ -111,7 +122,7 @@ GraphicsNotebook <- setRefClass(
     
     #' load plot tab (always loads activate tab)
     loadPlotTab = function() {
-      dmsg("\tLoading active tab with Tab ID ", data$activeTabID)
+      dmsg("\tLoading active tab with Tab ID ", data$tabIDs[data$nb])
       
       # activate the tabs plot
       getActiveTab()$activateGraphicsDevice()
