@@ -119,6 +119,10 @@ GuiElementDataFrame <- setRefClass(
           widgets[[id]][] <<- data.frame(value, stringsAsFactors=FALSE)  
         else # multiple records
           widgets[[id]][] <<- value  
+      } else if (class(widgets[[id]])[[1]]=="gTree") {
+        if (length(value) > 0) # accounts for svalue = integer(0)
+          svalue(widgets[[id]], index=TRUE) <<- value
+        # NOTE: not actively setting it to NULL because neither svalue(gtree) <- NULL nor svalue(gtree) <- integer(0) work without warning
       } else # all other widgets
         svalue(widgets[[id]]) <<- value
     },
@@ -149,12 +153,15 @@ GuiElementDataFrame <- setRefClass(
     
     # ' get widget value (returns gTable always as data frame)
     getWidgetValue = function(id) {
-      if (class(widgets[[id]])[[1]]=="gTable") #in case it's a gTable(i.e. data frame), have to access info slightly differently
-        if (class(widgets[[id]][])=="list") # single record is returned as a list rather than a dataframe
+      if (class(widgets[[id]])[[1]]=="gTable") { #in case it's a gTable(i.e. data frame), have to access info slightly differently
+        if (class(widgets[[id]][])=="list") { # single record is returned as a list rather than a dataframe
           return (data.frame(widgets[[id]][], stringsAsFactors=FALSE))
-      else # multiple records in table are returned properly as data frame
-        return (widgets[[id]][]) 
-      else
+        } else { # multiple records in table are returned properly as data frame
+          return (widgets[[id]][]) 
+        }
+      } else if (class(widgets[[id]])[[1]]=="gTree") {
+        return (svalue(widgets[[id]], index=TRUE)) # for gtree, return index
+      } else
         return(svalue(widgets[[id]]))
     },
     

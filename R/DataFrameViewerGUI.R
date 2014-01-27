@@ -30,7 +30,7 @@ setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, ac
       list ("DFV" , NULL , "_DFV" , NULL , NULL , NULL ),
       list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut!
           destroyGUI(gui, module)
-          getModule(gui, module)$launchGUI()
+          getModule(gui, module)$makeGUI()
         }), 
       list ("SaveToWS" , "gtk-home" , "Save To Workspace" , "<ctrl>H" ,"Save settings and data to workspace" , function(...) { 
         showInfo(gui, module, "Saving to workspace...", timer=1, okButton=FALSE)
@@ -107,7 +107,7 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   setElements(gui, module, gn = gn)
   
   #dmsg("gn settings: ", gn$getSettings())
-  gn$makeGUI(container = plot.frame)
+  gn$makeGUI(parent = plot.frame)
   #gn$openPlotTab("Test")
   
 #  dfv$pn<-pn.GUI(plot.frame, dfv$win, 
@@ -132,5 +132,6 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   
   # load
 #  DFV.clearPlotParams(dfv)
-    
+  
+  
 })

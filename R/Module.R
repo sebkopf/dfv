@@ -1,49 +1,38 @@
-#' A data frame that has a user interface associated with it.
+#' A gui element data frame that has a whole user interface associated with it.
 #' 
 #' \code{Module$new()} initiates the module.
 #' 
-#' @method showGUI shows the user interface (requires a Hub object, unless running in standalone mode)
+#' @method launch shows the user interface linked to this module
 Module <- setRefClass(
   'Module',
-  contains = 'DataFrame',
+  contains = 'GuiElementDataFrame',
   fields = list(
-    gui = 'BaseGUI', # an S4 gui class
-    widgets = 'list' # list of all the widgets to keep track of
+    gui = 'BaseGUI' # an S4 gui class
   ), 
   methods = list(
      initialize = function(...){
        callSuper(...)
-       gui@module <<- class(.self) # so the GUI knows which module it belongs to (for multi module GUIs)
+       
+       # so the GUI knows which module it belongs to (for multi module GUIs)
+       gui@module <<- class(.self) 
        
        ### default setting for a module
        setSettings(
          windowSize = c(800, 600),
-         windowTitle = "Module"
+         windowTitle = "Module",
+         windowModal = FALSE
        )
      },
     
-     getWidget = function(id) {
-       return (widgets[[id]])
+     #' Get module (flexibility for multi module GUIs)
+     getModule = function(name = 'Module') {
+        return (.self) # standalone module always returns itself
      },
      
-     getWidgets = function(ids) {
-       if (missing(ids))
-         return (widgets)
-       return (widgets[ids])
-     },
-     
-     setWidgets = function(...) {
-       # FIXME: allow both ... and list(a=b) to be passed in!
-       widgets <<- modifyList(widgets, list(...))
-     },
-     
-     cleanWidgets = function() {
-       widgets <<- list()
-     },
-    
-     #' Module launch function
-     launch = function(name) {
+     #' Module make function
+     makeGUI = function(...) {
        showGUI(gui, .self) # show module GUI
+       # Note: the loadGUI() function is executed via the BaseGUI through the focusHandler to enable data loading in modal dialogs
      }
   )
 )
