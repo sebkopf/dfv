@@ -17,12 +17,13 @@ Depends:
     RGtk2
 License: GPL (>= 2)
 Collate:
+  'dfv.R'
   'BaseGUI.R'
   'DataFrameViewerGUI.R'
   'DataFrame.R'
   'GuiElementDataFrame.R'
   'Module.R'
+  'ModalDialog.R'
   'SavePlotDialog.R'
   'GraphicsNotebookTab.R'
   'GraphicsNotebook.R'
-  'dfv.R'
