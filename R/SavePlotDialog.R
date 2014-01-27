@@ -1,35 +1,12 @@
-SavePlotDialogGUI <- setClass("SavePlotDialogGUI", contains="BaseGUI")
-
-
-setMethod("getToolbarXML", "SavePlotDialogGUI", function(gui, module) {
-  return (
-    nav <- '
-      <separator expand="true"/>
-      <toolitem action="Save"/>
-      <separator expand="true"/>
-      <toolitem action="Cancel"/>
-      <separator expand="true"/>
-      '
-  )
-})
-
-setMethod("setNavigationActions", "SavePlotDialogGUI", function(gui, module, actionGrp) {
-  nav.actions <-
-    list(## name, icon, label , accelerator , tooltip , callback
-      list ("Save" , "gtk-apply", "Save" , "<ctrl>S", "Save PDF(s)" , function(...) {
-        setData(gui, module, save = TRUE)
-        getModule(gui, module)$saveGUI()
-        destroyGUI(gui, module)
-      } ),
-      list ("Cancel" , "gtk-cancel" ,"Cancel" , NULL, "Cancel saving.", function(...) { 
-        destroyGUI(gui, module)
-      }))
-  actionGrp$addActions(nav.actions)
-})
+SavePlotDialogGUI <- setClass("SavePlotDialogGUI", contains="ModalDialogGUI")
 
 setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
-  setToolbarGroup(gui, module, ggroup(horizontal=TRUE, cont=getWinGroup(gui, module), spacing=0, expand=FALSE))
+  
+  fnGrp <- ggroup(horizontal=TRUE, cont=mainGrp)
+    glabel("Filename:", cont=fnGrp)
+    setWidgets(gui, module, filename = gedit("", cont=fnGrp))
+    setWidgets(gui, module, extension = glabel("", cont=fnGrp))
   
   # pictures directory selection
   fileBrowser.items <- function(path = NULL, user.data=NULL) {
@@ -38,7 +15,6 @@ setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
     else
       path <- file.path(getwd(), do.call("file.path", args=as.list(path)))
     
-    #setSettings(gui, module, plotsPath = path)
     showInfo(gui, module, paste("Folder:", path), timer=NULL, okButton=FALSE)
     
     folders <- subset(data.frame(
@@ -63,30 +39,32 @@ setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
   # tree click handler
   addHandlerClicked(tree, handler=function(h,...) {
     if (!is.null(val <- svalue(tree)))
-      setSettings(gui, module, plotsPath = val)
+      setData(gui, module, plotsPath = val)
     else
-      setSettings(gui, module, plotsPath = getwd()) # set back to working directory
-    showInfo(gui, module, paste("Folder: ", getSettings(gui, module, 'plotsPath')), timer=NULL, okButton=FALSE)
+      setData(gui, module, plotsPath = getwd()) # set back to working directory
+    showInfo(gui, module, paste("Folder: ", getData(gui, module, 'plotsPath')), timer=NULL, okButton=FALSE)
   })
 })
 
 SavePlotDialog <- setRefClass(
   'SavePlotDialog',
-  contains = 'Module',
+  contains = 'ModalDialog',
   methods = list(
     initialize = function(gui = SavePlotDialogGUI(), ...){
       callSuper(gui = gui, ...)
       
-      ### default setting for SavePlotDialog
+      ### overwrite default setting for SavePlotDialog
       setSettings(
         windowSize = c(400, 400),
         windowTitle = "Saving to PDF ...",
-        windowModal = TRUE,
-        plotsPath = getwd(),
-        plotsPathIndex = integer(0)
+        ok.icon = "gtk-save", # overwrite
+        ok.label = "Save",
+        ok.tooltip = "Save PDF(s).",
+        overwriteProtected = TRUE,
+        protect = TRUE
       )
       
-      # options available for plotting
+      # new options available for plotting (these can be overwritten)
       setSettings(
         options = data.frame(
           ID = 1,
@@ -94,15 +72,14 @@ SavePlotDialog <- setRefClass(
           height.inches = 6,
           stringsAsFactors = FALSE)
       )
-    }, 
-    
-    saveGUI = function() {
-      callSuper()
-    },
-    
-    loadGUI = function() {
-      callSuper()
-      setData(save = FALSE) # response from the modal dialog
+      
+      # data
+      setData(
+        plotsPath = getwd(),
+        plotsPathIndex = integer(0),
+        filename = "",
+        extension = ".pdf"
+      )
     }
   )
 )
