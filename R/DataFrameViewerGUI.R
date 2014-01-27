@@ -8,6 +8,12 @@ setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
       <menuitem action="SaveToWS"/>
       <menuitem action="Quit"/>
     </menu>
+    <menu name = "Plots" action="Plots">
+      <menuitem action="NewPlotTab"/>
+      <menuitem action="ClosePlotTab"/>
+      <menuitem action="SavePlot"/>
+      <menuitem action="PrintPlot"/>
+    </menu>
     <menu name = "Help" action="Help">
       <menuitem action="ggplot"/>
     </menu>')
@@ -18,17 +24,25 @@ setMethod("getToolbarXML", "DataFrameViewerGUI", function(gui, module) {
 })
 
 setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, actionGrp) {
+  gn <- getElements(gui, module, 'gn') # graphic notebook
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
       list ("DFV" , NULL , "_DFV" , NULL , NULL , NULL ),
-      list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , NULL , function(...) remakeGUI(gui, module) ) , # FIXME: disable the keyboard shortcut!
+      list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut!
+          destroyGUI(gui, module)
+          getModule(gui, module)$launchGUI()
+        }), 
       list ("SaveToWS" , "gtk-home" , "Save To Workspace" , "<ctrl>H" ,"Save settings and data to workspace" , function(...) { 
-        setSettings(gui, module, lrPane = svalue(getWidget(gui, module, 'lrPane'))) # save paned group positions
         showInfo(gui, module, "Saving to workspace...", timer=1, okButton=FALSE)
-        module$saveToWorkspace()
+        getModule(gui, module)$saveToWorkspace()
         showInfo(gui, module, "Data Frame Viewer settings and data succesfully saved to workspace.", timer=2, okButton=FALSE)
       }) , 
       list ("Quit", "gtk-quit", "Quit", "<ctrl>Q", "Quit program", function(...) destroyGUI(gui, module) ),
+      list ("Plots", NULL , "_Plots" , NULL, NULL, NULL),
+      list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
+      list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
+      list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { gn$savePlot() } ),
+      list ("PrintPlot", gn$icons$PRINT.PLOT, "Print plot", NULL, NULL, function(...) { gn$printPlot() } ),
       list ("Help" , NULL , "_Help" , NULL , NULL , NULL ),
       list ("ggplot" , "gtk-info" ,"ggplot2" , NULL , NULL , function(...) browseURL("http://ggplot2.org/") )
       )
@@ -81,9 +95,21 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   size(df.frame)<-c(50,310)
   dfv$df.nb <- gnotebook(container = df.frame, expand=TRUE)
 #  gbutton(action=gaction("Refresh", icon="gtk-refresh", handler=function(h, ...) DFV.refreshDataFrame(dfv)), cont=ggroup(cont=df.frame))
-  gpanedgroup(code.frame, df.frame, container=left.grp, expand=TRUE, horizontal=FALSE)
+  tbPane <- gpanedgroup(code.frame, df.frame, container=left.grp, expand=TRUE, horizontal=FALSE)
   right.grp<-ggroup(expand=TRUE)  
   plot.frame<-gframe("Plots", cont=right.grp, expand=TRUE, horizontal=FALSE)
+  
+  #FIXME: continue here
+  #dmsg("get module settings for graphics notebook: ", module$getSettings("gn"))
+  tab <- GraphicsNotebookTab$new()
+  tab$setSettings(editablePlotLabel = TRUE)
+  gn <- GraphicsNotebook$new(tab = tab)
+  setElements(gui, module, gn = gn)
+  
+  #dmsg("gn settings: ", gn$getSettings())
+  gn$makeGUI(container = plot.frame)
+  #gn$openPlotTab("Test")
+  
 #  dfv$pn<-pn.GUI(plot.frame, dfv$win, 
 #                 newPlotObj=DFV.newPlotTabObj(), newPlotObjLoadHandler=NULL, # specifically no new plotobj load handler to keep plot params from previous plot 
 #                 plotObjLoadHandler=dfv.loadPlotHandler,
@@ -91,7 +117,9 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   gbutton(action=gaction("Save to\nWorkspace", icon="gtk-home", handler=function(h,...) DFV.saveToWorkspace(dfv), tooltip="Save to workspace to resume working on these plots at a later time."), cont=dfv$pn$buttons.grp)
   dfv$plotParams$errorMsg<-glabel("", cont=plot.frame)
   lrPane <- gpanedgroup(left.grp,right.grp,container=dfs.tab, expand=TRUE)
-  setWidgets(gui, module, lrPane = lrPane)
+  
+  # save widgets (this way they will be autoloaded and autosaved from their corresponding settings)
+  setWidgets(gui, module, lrPane = lrPane, tbPane = tbPane)
   
   # handlers
 #  addHandlerChanged(dfv$df.nb, handler=function(h,...) svalue(dfv$plotParams$df)<-names(h$obj)[h$pageno])
@@ -105,11 +133,4 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   # load
 #  DFV.clearPlotParams(dfv)
     
-  visHandler <- addHandlerFocus(getWindow(gui, module), handler=function(...) {
-    # loading divider positions from settings
-    svalue(lrPane) <- getSetting(gui, module, 'lrPane')
-    # block Handler (only want it to fire once)  
-    blockHandler(getWindow(gui, module), ID=visHandler)
-  })
-  
 })

@@ -19,32 +19,51 @@ DataFrame <- setRefClass(
     },
     
     saveToWorkspace = function() {
-      message("Saving data and settings to global variable ", getSetting('wsVariable'), ".")
-      assign(getSetting('wsVariable'), list(
+      message("Saving data and settings into global variable ", getSettings('wsVariable'), ".")
+      assign(getSettings('wsVariable'), list(
           data = data,
           settings = settings
         ), envir=.GlobalEnv)
       save.image()
     },
     
-    getSetting = function(id) {
-      return (settings[[id]])
-    },
-    
     getSettings = function(ids) {
       if (missing(ids))
         return (settings)
+      else if (length(ids) == 1)
+        return (settings[[ids]]) 
       return (settings[ids])
     },
     
+    # 'Pass in either named settings 
+    # 'Code: setSettings(a=5, b='test', ...)
+    # 'or pass in just a single list
+    # 'Code: setSettings(list(a=5, b='test', ...))
     setSettings = function(...) {
-      # FIXME: allow both ... and list(a=b) to be passed in!
-      settings <<- modifyList(settings, list(...))
+      sets <- list(...)
+      # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
+      if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
+        settings <<- modifyList(settings, sets[[1]]) 
+      else
+        settings <<- modifyList(settings, sets)
     },
     
-    #' Get Data
-    getData = function(id) {
-      message("get Data not implemented yet")
+    getData = function(ids) {
+      if (missing(ids))
+        return (data)
+      else if (length(ids) == 1)
+        return (data[[ids]])
+      return (data[ids])
+    },
+    
+    # 'Same as for the settings
+    setData = function(...) {
+      sets <- list(...)
+      # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
+      if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
+        data <<- modifyList(data, sets[[1]]) 
+      else
+        data <<- modifyList(data, sets)
     }
   )
 )
