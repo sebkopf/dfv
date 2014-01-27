@@ -20,7 +20,8 @@ Module <- setRefClass(
        setSettings(
          windowSize = c(800, 600),
          windowTitle = "Module",
-         windowModal = FALSE
+         windowModal = FALSE,
+         protect = TRUE
        )
      },
     

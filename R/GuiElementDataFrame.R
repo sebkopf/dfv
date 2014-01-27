@@ -55,9 +55,9 @@ GuiElementDataFrame <- setRefClass(
     
     # 'Set sub elements into the element data frame
     # '@param: passSettings - whether to pass settings with the same id as the element to the element
-    #     not, since these are passed down when the element is added, it will overwrite changes to defaul values once settings are loaded from previous versions
-    #     This means that if you want to change a default setting, it needs to be changed AFTER the element is added with setElements (or by choosing passSettings = FALSE)
-    #     The same is also true for passData
+    #     note, since these are passed down when the element is added, it will overwrite changes to defaul values once settings are loaded from previous versions 
+    #     ==> except for settings that are protected! --> see protectSettings()
+    #     if you don't want any settings or data passed to the element, yo can choose passSettings = FALSE / passData = FALSE
     #     FIXME: perhaps introduce NON-CHANGABLE settings and data?
     # '@param: passData - whether to pass data with the same id as the element to the element
     setElements = function(..., passSettings = TRUE, passData = TRUE) {

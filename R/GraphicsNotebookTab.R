@@ -22,7 +22,8 @@ GraphicsNotebookTab <- setRefClass(
             rightclick = FALSE,
             mousemotion = FALSE,
             rightclickmenu = FALSE
-          )
+          ),
+        protect = TRUE # these cannot be overwritten by the user
       )
     },
   

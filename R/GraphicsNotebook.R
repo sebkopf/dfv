@@ -38,14 +38,14 @@ GraphicsNotebook <- setRefClass(
     
     # 'Excepts a container in ...
     makeGUI = function(...) {
+      # save dialog
+      setElements('savePlotDialog' = SavePlotDialog$new()) 
+      
       # plots notebook
       widgets$nb <<- gnotebook(cont=list(...)$parent, expand=TRUE) 
       handlers$nb.changedHandler <<- addHandlerChanged(widgets$nb, handler=function(h,...) selectPlotTab(h$pageno))
       for (tabID in data$tabIDs)
         newPlotTab(tabID = tabID, select = FALSE)
-      
-      # save dialog
-      setElements('savePlotDialog' = SavePlotDialog$new())
     },
     
     # 'Creates the standard tab by default
@@ -121,9 +121,15 @@ GraphicsNotebook <- setRefClass(
     },
     
     #' save active plot (ask for dimension info first)
-    savePlot = function(){
+    savePlot = function (saveAll = FALSE){
+      # setup save dialog
+      if (!saveAll) # save all
+        getElements("savePlotDialog")$setData(filename =paste0(format(Sys.time(),format="%Y%m%d"),"_", names(widgets$nb)[data$nb]), extension = ".pdf")
+      else # save single
+        getElements("savePlotDialog")$setData(filename = paste0(format(Sys.time(),format="%Y%m%d"), "_"), extension = "[tab title].pdf")
+      
       getElements("savePlotDialog")$makeGUI() # this is a modal dialog so method will not continue until it is done
-      if ( elements$savePlotDialog$getData('save') ) { # check what modal dialog returned
+      if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
         dmsg("settings :", elements$savePlotDialog$getSettings())
       
       

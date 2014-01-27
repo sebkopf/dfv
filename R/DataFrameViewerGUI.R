@@ -12,6 +12,7 @@ setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
       <menuitem action="NewPlotTab"/>
       <menuitem action="ClosePlotTab"/>
       <menuitem action="SavePlot"/>
+      <menuitem action="SaveAllPlots"/>
       <menuitem action="PrintPlot"/>
     </menu>
     <menu name = "Help" action="Help">
@@ -42,6 +43,7 @@ setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, ac
       list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
       list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
       list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { gn$savePlot() } ),
+      list ("SaveAllPlots", gn$icons$SAVE.ALL, "Save all plots", "<ctrl><shift>S", NULL, function(...) { gn$savePlot(saveAll = TRUE) } ),
       list ("PrintPlot", gn$icons$PRINT.PLOT, "Print plot", NULL, NULL, function(...) { gn$printPlot() } ),
       list ("Help" , NULL , "_Help" , NULL , NULL , NULL ),
       list ("ggplot" , "gtk-info" ,"ggplot2" , NULL , NULL , function(...) browseURL("http://ggplot2.org/") )
