@@ -8,6 +8,14 @@ setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
       <menuitem action="SaveToWS"/>
       <menuitem action="Quit"/>
     </menu>
+    <menu name = "Data" action="Data">
+      <menuitem action="Paste"/>
+      <menuitem action="ImportExcel"/>
+    </menu>
+    <menu name = "Code" action="Code">
+      <menuitem action="Run"/>
+      <menuitem action="Snippets"/>
+    </menu>
     <menu name = "Plots" action="Plots">
       <menuitem action="NewPlotTab"/>
       <menuitem action="ClosePlotTab"/>
@@ -21,7 +29,21 @@ setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
 })
 
 setMethod("getToolbarXML", "DataFrameViewerGUI", function(gui, module) {
-  return ('')
+  return (
+    nav <- '
+    <toolitem action="SaveToWS"/>
+    <toolitem action="Paste"/>
+    <toolitem action="ImportExcel"/>
+    <separator expand="true"/>
+    <toolitem action="Run"/>
+    <separator expand="true"/>
+    <toolitem action="NewPlotTab"/>
+    <toolitem action="ClosePlotTab"/>
+    <toolitem action="SavePlot"/>
+    <toolitem action="SaveAllPlots"/>
+    <toolitem action="PrintPlot"/>
+    '
+  )
 })
 
 setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, actionGrp) {
@@ -29,16 +51,22 @@ setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, ac
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
       list ("DFV" , NULL , "_DFV" , NULL , NULL , NULL ),
-      list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut!
+      list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut! (enable code execution instead)
           destroyGUI(gui, module)
           getModule(gui, module)$makeGUI()
         }), 
-      list ("SaveToWS" , "gtk-home" , "Save To Workspace" , "<ctrl>H" ,"Save settings and data to workspace" , function(...) { 
+      list ("SaveToWS" , "gtk-home" , "Save DFV" , "<ctrl>H" ,"Save settings and data to workspace" , function(...) { 
         showInfo(gui, module, "Saving to workspace...", timer=1, okButton=FALSE)
         getModule(gui, module)$saveToWorkspace()
         showInfo(gui, module, "Data Frame Viewer settings and data succesfully saved to workspace.", timer=2, okButton=FALSE)
       }) , 
       list ("Quit", "gtk-quit", "Quit", "<ctrl>Q", "Quit program", function(...) destroyGUI(gui, module) ),
+      list ("Data", NULL , "_Data" , NULL, NULL, NULL),
+      list ("Paste", "gtk-copy", "Paste Data", NULL, "Paste data from the clipboard", function(...) { dmsg("paste") } ),
+      list ("ImportExcel", "gtk-convert", "Import data", NULL, "Import data from excel spreadsheet", function(...) { dmsg("excel import") } ),
+      list ("Code", NULL , "_Code" , NULL, NULL, NULL),
+      list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { dmsg("run") } ),
+      list ("Snippets", "gtk-find-and-replace", "Code Snippets", NULL, "Save/load code snippets", function(...) { gmessage("Sorry, not implemented yet.") } ),
       list ("Plots", NULL , "_Plots" , NULL, NULL, NULL),
       list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
       list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
@@ -62,6 +90,8 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   # top level groups
   setMenuGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
+  setToolbarGroup(gui, module, ggroup(horizontal=TRUE, cont=getWinGroup(gui, module), spacing=0, expand=FALSE))
+  
   #setToolbarGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   
   dfv <- list()
