@@ -85,9 +85,13 @@ DataFrame <- setRefClass(
       sets <- list(...)
       # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
       if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
-        data <<- modifyList(data, sets[[1]]) 
-      else
-        data <<- modifyList(data, sets)
+        sets <- sets[[1]] 
+      
+      # will overwrite all data entries (no selective modification like for the settings)
+      # NOTE: this is a key different between a setting and data!
+      # FIXME: this is only really necessary because of the limitiation that modifyList does not work if there are data.frames deeper in the list structure
+      for (key in names(sets))
+        data[[key]] <<- sets[[key]]
     }
   )
 )

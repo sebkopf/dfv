@@ -104,7 +104,7 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   #FIXME: continue here
   #dmsg("get module settings for graphics notebook: ", module$getSettings("gn"))
   tab <- GraphicsNotebookTab$new()
-  tab$setSettings(editablePlotLabel = TRUE)
+  tab$setSettings(editablePlotLabel = TRUE, overwriteProtected = TRUE)
   gn <- GraphicsNotebook$new(tab = tab)
   setElements(gui, module, gn = gn)
   

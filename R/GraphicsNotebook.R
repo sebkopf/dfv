@@ -122,98 +122,33 @@ GraphicsNotebook <- setRefClass(
     
     #' save active plot (ask for dimension info first)
     savePlot = function (saveAll = FALSE){
-      # setup save dialog
-      if (!saveAll) # save all
-        getElements("savePlotDialog")$setData(filename =paste0(format(Sys.time(),format="%Y%m%d"),"_", names(widgets$nb)[data$nb]), extension = ".pdf")
-      else # save single
-        getElements("savePlotDialog")$setData(filename = paste0(format(Sys.time(),format="%Y%m%d"), "_"), extension = "[tab title].pdf")
-      
-      getElements("savePlotDialog")$makeGUI() # this is a modal dialog so method will not continue until it is done
-      if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
-        dmsg("settings :", elements$savePlotDialog$getSettings())
-      
-      
+      if (data$nb > 0) {
+        # setup save dialog
+        if (!saveAll) { # save all
+          getElements("savePlotDialog")$setSettings(windowTitle = "Save plot ...", overwriteProtected = T)
+          getElements("savePlotDialog")$setData(filename =paste0(format(Sys.time(),format="%Y%m%d"),"_", names(widgets$nb)[data$nb]), extension = ".pdf")
+        } else { # save single
+          getElements("savePlotDialog")$setSettings(windowTitle = "Save all plots ...", overwriteProtected = T)
+          getElements("savePlotDialog")$setData(filename = paste0(format(Sys.time(),format="%Y%m%d"), "_"), extension = "[tab title].pdf")
+        }
+          
+        getElements("savePlotDialog")$makeGUI() # this is a modal dialog so method will not continue until it is done
+        if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
+          dmsg("settings :", elements$savePlotDialog$getData())
+          
+          if (!saveAll) {
+            filepath <- file.path(elements$savePlotDialog$data$plotsPath, paste0(elements$savePlotDialog$data$filename, ".pdf"))
+            dmsg("Saving active plot to file ", filepath)
+            getActiveTab()$saveGraphicsDeviceToPDF(filename = filepath, width = elements$savePlotDialog$data$width, height = elements$savePlotDialog$data$height)
+          } else {
+            for (tab in getElements(paste0("tab", data$tabIDs))) {
+              filepath <- file.path(elements$savePlotDialog$data$plotsPath, paste0(elements$savePlotDialog$data$filename, tab$data$label, ".pdf"))
+              dmsg("Saving plot to file ", filepath)
+              tab$saveGraphicsDeviceToPDF(filename = filepath, width = elements$savePlotDialog$data$width, height = elements$savePlotDialog$data$height)
+            }
+          }
+        }
       }
-#       # working directory selection
-#       # file browser
-#       fileBrowser.items <- function(path = NULL, user.data=NULL) {
-#         if (is.null(path)) 
-#           path <- hub$getHome()
-#         else
-#           path <- file.path(hub$getHome(), do.call("file.path", args=as.list(path)))
-#         
-#         hub$setWD(path)
-#         showInfo(gui, hub, hub$getWD(), timer=NULL, okButton=FALSE)
-#         
-#         folders <- subset(data.frame(
-#           Folder=dir(path, include.dirs=TRUE),
-#           Path=dir(path, include.dirs=TRUE, full.names=TRUE),
-#           file.info(dir(path, include.dirs=TRUE, full.names=TRUE))[,c(1:2)], 
-#           stringsAsFactors=FALSE), isdir==TRUE)
-#         
-#         # figure out number of subdirectories
-#         folders$Subdirs <- apply(folders, 1, function(x) length(which(file.info(dir(x[2], full.names=T))$isdir)))
-#         
-#         
-#         #FIXME: check what is going on here with the subdirectory...
-#         return(folders[c("Folder", "Subdirs", "Path")])
-#       }
-#       
-#       # check for subfolders
-#       fileBrowser.hasOffspring <- function(children, user.data=NULL, ...) return(children$Subdirs > 0) # which items have subdirectories
-#       fileBrowser.icons <- function(children,user.data=NULL, ...) return(rep("gtk-directory", length=nrow(children))) # FIXME: could implement some indicator which folders have already been used
-#       
-#       # tree
-#       tree <- gtree(fileBrowser.items, fileBrowser.hasOffspring, chosencol=3, icon.FUN = fileBrowser.icons, container=mainGrp, expand=TRUE)
-#       
-#       # tree click handler
-#       addHandlerClicked(tree, handler=function(h,...) {
-#         if (!is.null(val <- svalue(tree)))
-#           hub$setWD(val)
-#         else
-#           hub$setWD(hub$getHome()) # set back to home directory
-#         showInfo(gui, hub, hub$getWD(), timer=NULL, okButton=FALSE)
-#       })
-      
-      
-#       pn.savePlotGUI<-function(pn, index=NULL){
-#         if (is.null(index)) { # save all plots
-#           f=gfile("Select the folder where to save all the plots.", type="selectdir", cont=pn$win)
-#         } else { # save index plot
-#           f=gfile("Select where to save this graph.", type="save", cont=pn$win, 
-#                   initialfilename = paste(format(Sys.time(),format="%Y%m%d"),"_", names(pn$plot.nb)[index],".pdf", sep=""),
-#                   filter = list("PDF Files" = list(patterns=c("*.pdf")), "All files" = list(patterns = c("*"))))
-#         }
-#         
-#         if (!is.na(f)){
-#           grp<-ggroup(cont=(w<-gwindow("Save plot as pdf", width=200, height=100, spacing=30)), horizontal=FALSE, expand=TRUE)
-#           dlggrp<-glayout(container=grp, spacing=10)
-#           dlggrp[1,1]<-glabel("Width [inches]:",con=dlggrp)
-#           dlggrp[1,2]<-(width <- gedit(8,container=dlggrp, coerce.with=as.numeric))
-#           
-#           dlggrp[2,1]<-glabel("Height [inches]:",con=dlggrp)
-#           dlggrp[2,2]<-(height <- gedit(6,container=dlggrp, coerce.with=as.numeric))
-#           
-#           #dlggrp[3,1]<-glabel("Unit:",con=dlggrp)
-#           #dlggrp[3,2]<-(units <- gcombobox(c("in","cm","mm"),container=dlggrp))
-#           
-#           gbutton("save", cont=grp, handler=function(h,...) {
-#             if (is.null(index)) { # save all
-#               for (i in 1:length(pn$plot.nb)) 
-#                 pn.savePlot(pn, i, file.path(f, paste(format(Sys.time(),format="%Y%m%d"),"_", names(pn$plot.nb)[i],".pdf", sep="")), width=svalue(width), height=svalue(height))
-#             } else { # save just the current
-#               if (length(grep("\\.pdf$", f))==0) f<-paste(f,".pdf",sep="") # ensure .pdf ending
-#               pn.savePlot(pn, index, f, width=svalue(width), height=svalue(height))
-#             }
-#             pn.reactivatePlot(pn) # reactivate previously active plot
-#             dispose(w)
-#           })
-#         }
-#       }
-    },
-    
-    saveAllPlots = function() {
-      message("SAVE ALL PLOTS")
     },
     
     # 'Print active plot

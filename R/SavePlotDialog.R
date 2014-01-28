@@ -2,13 +2,37 @@ SavePlotDialogGUI <- setClass("SavePlotDialogGUI", contains="ModalDialogGUI")
 
 setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
+  treeGrp <- ggroup(horizontal=FALSE, expand=TRUE)
+  optionsGrp <- gframe("Options", horizontal=FALSE)
+  setWidgets(gui, module, tbPane = gpanedgroup(treeGrp, optionsGrp, container=mainGrp, expand=TRUE, horizontal=FALSE))
   
-  fnGrp <- ggroup(horizontal=TRUE, cont=mainGrp)
-    glabel("Filename:", cont=fnGrp)
-    setWidgets(gui, module, filename = gedit("", cont=fnGrp))
-    setWidgets(gui, module, extension = glabel("", cont=fnGrp))
+  # options group
+  detailsGrp <- glayout(cont = optionsGrp, expand = TRUE)
+  detailsGrpGTK<-getToolkitWidget(detailsGrp) # gtk object
+  detailsGrpGTK['border-width']<-5 # border with
+  detailsGrp[(i<-1), 1] <- "Filename:"
+  detailsGrp[i, 2] <- setWidgets(gui, module, filename = gedit("", cont=detailsGrp))
+  detailsGrp[i, 3] <- setWidgets(gui, module, extension = glabel("", cont=detailsGrp))
+  detailsGrp[(i<-i+1), 1] <- "Saved formats:"
+  detailsGrp[i, 2:3, expand=TRUE] <- setWidgets(gui, module, optionsTable = gtable(data.frame(Dimensions=character(0), stringsAsFactors=FALSE), expand=TRUE, cont=detailsGrp))
+  detailsGrp[(i<-i+1), 1] <- "Height [inches]:"
+  detailsGrp[i, 2] <- setWidgets(gui, module, height = gedit("", cont=detailsGrp, coerce.with=as.numeric))
+  detailsGrp[(i<-i+1), 1] <- "Width [inches]:"
+  detailsGrp[i, 2] <- setWidgets(gui, module, width = gedit("", cont=detailsGrp, coerce.with=as.numeric))
   
-  # pictures directory selection
+  # handler for table (load the widht and height settings)
+  addHandlerClicked(getWidgets(gui, module, 'optionsTable'), 
+      handler = function(h, ...) {
+        index <- which(getData(gui, module, 'options')$Dimensions == svalue(h$obj))
+        if (length(index) > 0) { # make sure its not an empty index
+          getModule(gui, module)$loadWidgets(
+            width = getData(gui, module, 'options')[index,'width'],
+            height = getData(gui, module, 'options')[index,'height'])
+        }
+      })
+  
+  
+  # directory selection
   fileBrowser.items <- function(path = NULL, user.data=NULL) {
     if (is.null(path)) 
       path <- getwd() 
@@ -25,7 +49,7 @@ setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
     
     # figure out number of subdirectories
     folders$Subdirs <- apply(folders, 1, function(x) length(which(file.info(dir(x[2], full.names=T))$isdir)))
-    return(folders[c("Folder", "Subdirs", "Path")])
+    return(folders[c("Folder", "Path", "Subdirs")])
   }
   
   # check for subfolders
@@ -33,7 +57,7 @@ setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
   fileBrowser.icons <- function(children,user.data=NULL, ...) return(rep("gtk-directory", length=nrow(children))) # FIXME: could implement some indicator which folders have already been used
   
   # tree
-  tree <- gtree(fileBrowser.items, fileBrowser.hasOffspring, chosencol=3, icon.FUN = fileBrowser.icons, container=mainGrp, expand=TRUE)
+  tree <- gtree(fileBrowser.items, fileBrowser.hasOffspring, chosencol=2, icon.FUN = fileBrowser.icons, container=treeGrp, expand=TRUE)
   setWidgets(gui, module, plotsPathIndex = tree) # link tree to plotsPathIndex
   
   # tree click handler
@@ -55,7 +79,7 @@ SavePlotDialog <- setRefClass(
       
       ### overwrite default setting for SavePlotDialog
       setSettings(
-        windowSize = c(400, 400),
+        windowSize = c(450, 550),
         windowTitle = "Saving to PDF ...",
         ok.icon = "gtk-save", # overwrite
         ok.label = "Save",
@@ -64,22 +88,37 @@ SavePlotDialog <- setRefClass(
         protect = TRUE
       )
       
-      # new options available for plotting (these can be overwritten)
-      setSettings(
-        options = data.frame(
-          ID = 1,
-          width.inches = 8,
-          height.inches = 6,
-          stringsAsFactors = FALSE)
-      )
+      setSettings(tbPane = 0.4) # new option (can be overwritten)
       
       # data
       setData(
         plotsPath = getwd(),
         plotsPathIndex = integer(0),
         filename = "",
-        extension = ".pdf"
+        extension = ".pdf",
+        options = data.frame( # all the options for formats
+          width = c(4, 8, 16),
+          height = c(4, 6, 12),
+          stringsAsFactors = FALSE),
+        width = 8,
+        height = 6
       )
+    },
+    
+    loadGUI = function() {
+      callSuper()
+      
+      # set formats table
+      data$options <<- mutate(data$options, Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)"))
+      data$options <<- unique(data$options) # only use each format once
+      loadWidgets(optionsTable = data$options["Dimensions"])
+      svalue(widgets$optionsTable, index=FALSE) <<- subset(data$options, width == data$width & height == data$height)$Dimensions
+    }, 
+    
+    saveGUI = function() {
+      callSuper()
+      # save width and height in options
+      data$options <<- rbind(data$options, data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))# add used widht and height to settings
     }
   )
 )

@@ -41,7 +41,10 @@ GraphicsNotebookTab <- setRefClass(
       grp <- ggroup(cont = nb, horizontal=FALSE, label = data$label)
       if (settings$editablePlotLabel) {
         widgets$label <<- gedit(data$label, cont = grp)
-        addHandlerKeystroke(widgets$label, handler=function(h,...) names(nb)[svalue(nb)] <- svalue(h$obj) ) # update notebook, data itself is later saved during a saveGUI() event
+        addHandlerKeystroke(widgets$label, handler=function(h,...) {
+          saveWidgets('label')
+          names(nb)[svalue(nb)] <- getData('label')
+        } ) # update notebook, data itself is later saved during a saveGUI() event
       }
       widgets$gg <<- ggraphics(cont=grp)
       
@@ -83,9 +86,9 @@ GraphicsNotebookTab <- setRefClass(
     },
     
     # 'Save graphics device to pdf
-    saveGraphicsDeviceToPDF = function(filename, widht = 8, height = 6, ...) {
+    saveGraphicsDeviceToPDF = function(filename, width = 8, height = 6, ...) {
       activateGraphicsDevice()
-      dev.copy2pdf(file=file, width=width, height=height, ...) # copy graph
+      dev.copy2pdf(file=filename, width=as.numeric(width), height=as.numeric(height), ...) # copy graph
     }
     
   )

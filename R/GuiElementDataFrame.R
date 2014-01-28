@@ -20,11 +20,17 @@ GuiElementDataFrame <- setRefClass(
     #' overwrite to get settings from all elements when calling getSettings without specifying fields
     getSettings = function(ids) {
       if (missing(ids)) { # get all settings
-        allSettings <- modifyList(list(), settings)
+        allSettings <- c(list(), settings)
         for (ele in names(elements)) {
+          # remove old settings for the element
+          allSettings[[ele]] <- NULL
+          
+          # get new settings for the element
           s <- list()
           s[[ele]] <- elements[[ele]]$getSettings()
-          allSettings <- modifyList(allSettings, s)
+          
+          # combine
+          allSettings <- c(allSettings, s)
         }
         return(allSettings)
       } else
@@ -34,11 +40,17 @@ GuiElementDataFrame <- setRefClass(
     #' overwrite to get data from all elements when calling getData without specifying fields
     getData = function(ids) {
       if (missing(ids)) { # get all data
-        allData <- modifyList(list(), data)
+        allData <- c(list(), data)
         for (ele in names(elements)) {
+          # remove old data for the element
+          allData[[ele]] <- NULL
+          
+          # get new data
           d <- list()
           d[[ele]] <- elements[[ele]]$getData()
-          allData <- modifyList(allData, d)
+          
+          # combine
+          allData <- c(allData, d)
         }
         return(allData)
       } else
@@ -99,19 +111,27 @@ GuiElementDataFrame <- setRefClass(
       sets <- list(...)
       # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
       if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
-        widgets <<- modifyList(widgets, sets[[1]]) 
+        sets <- sets[[1]]
+        
+      widgets <<- modifyList(widgets, sets) 
+      if (length(sets) == 1)
+        return (getWidgets(names(sets)[1])) # if setting a single widget, return it so it can be operated on right away
       else
-        widgets <<- modifyList(widgets, sets)
+        return (NULL)
     },
     
     # '@Param: value - if missing, take value from the field of the same id stored in $settings or $data (settings takes precedence)
     loadWidget = function(id, value) {
       # check if value is supplied or availabe in the data
-      if (missing(value)) 
+      if (missing(value)) {
         if (is.null(value <- settings[[id]]) && is.null(value <- data[[id]])) { # settings first, then data
           message("WARNING: trying to load widget", id, "but no value supplied and no corresponding settings or data field found in this GuiElementDataFrame")
           return(NULL)
         } 
+      } else if (is.null(value)) {
+        dmsg("trying to load widget", id, "but value supplied is NULL --> skip") #FIXME?
+        return(NULL)
+      }
       
       # set widget value
       if (class(widgets[[id]])[[1]]=="gTable") { # gtable style widgets
@@ -212,15 +232,19 @@ GuiElementDataFrame <- setRefClass(
     # load (autoload by default, including all elements)
     loadGUI = function() {
       autoloadWidgets()
-      for (ele in elements) 
-        ele$loadGUI()
+      for (ele in elements) {
+        if (length(ele$widgets) > 0) # only load if there are any widgets, i.e. gui is actualyl initialized
+          ele$loadGUI()
+      }
     },
     
     # save (save all widgets by default, including all elements)
     saveGUI = function() {
       saveWidgets()
-      for (ele in elements)
-        ele$saveGUI()
+      for (ele in elements) {
+        if (length(ele$widgets) > 0) # only save if there are any widgets, i.e. gui is actualyl initialized
+          ele$saveGUI()
+      }
     }
   )
 )
