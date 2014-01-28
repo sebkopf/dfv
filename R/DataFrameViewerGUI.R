@@ -42,8 +42,14 @@ setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, ac
       list ("Plots", NULL , "_Plots" , NULL, NULL, NULL),
       list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
       list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
-      list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { gn$savePlot() } ),
-      list ("SaveAllPlots", gn$icons$SAVE.ALL, "Save all plots", "<ctrl><shift>S", NULL, function(...) { gn$savePlot(saveAll = TRUE) } ),
+      list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { 
+        gn$savePlot() 
+        showInfo(gui, module, "Plot saved to PDF.", timer=2, okButton=FALSE)
+        } ),
+      list ("SaveAllPlots", gn$icons$SAVE.ALL, "Save all plots", "<ctrl><shift>S", NULL, function(...) { 
+        gn$savePlot(saveAll = TRUE) 
+        showInfo(gui, module, "All plots saved to PDF.", timer=2, okButton=FALSE)
+        } ),
       list ("PrintPlot", gn$icons$PRINT.PLOT, "Print plot", NULL, NULL, function(...) { gn$printPlot() } ),
       list ("Help" , NULL , "_Help" , NULL , NULL , NULL ),
       list ("ggplot" , "gtk-info" ,"ggplot2" , NULL , NULL , function(...) browseURL("http://ggplot2.org/") )
@@ -97,31 +103,20 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   size(df.frame)<-c(50,310)
   dfv$df.nb <- gnotebook(container = df.frame, expand=TRUE)
 #  gbutton(action=gaction("Refresh", icon="gtk-refresh", handler=function(h, ...) DFV.refreshDataFrame(dfv)), cont=ggroup(cont=df.frame))
-  tbPane <- gpanedgroup(code.frame, df.frame, container=left.grp, expand=TRUE, horizontal=FALSE)
   right.grp<-ggroup(expand=TRUE)  
   plot.frame<-gframe("Plots", cont=right.grp, expand=TRUE, horizontal=FALSE)
   
-  #FIXME: continue here
-  #dmsg("get module settings for graphics notebook: ", module$getSettings("gn"))
+  # set panes as widgets so they are user adjustable
+  setWidgets(gui, module, tbPane = gpanedgroup(code.frame, df.frame, container=left.grp, expand=TRUE, horizontal=FALSE))
+  setWidgets(gui, module, lrPane = gpanedgroup(left.grp,right.grp,container=dfs.tab, expand=TRUE))
+
+  ### Graphics Notebook
   tab <- GraphicsNotebookTab$new()
   tab$setSettings(editablePlotLabel = TRUE, overwriteProtected = TRUE)
   gn <- GraphicsNotebook$new(tab = tab)
   setElements(gui, module, gn = gn)
-  
-  #dmsg("gn settings: ", gn$getSettings())
   gn$makeGUI(parent = plot.frame)
-  #gn$openPlotTab("Test")
-  
-#  dfv$pn<-pn.GUI(plot.frame, dfv$win, 
-#                 newPlotObj=DFV.newPlotTabObj(), newPlotObjLoadHandler=NULL, # specifically no new plotobj load handler to keep plot params from previous plot 
-#                 plotObjLoadHandler=dfv.loadPlotHandler,
-#                 plotEventHandlers=dfv.plotEventHandlers)
-  gbutton(action=gaction("Save to\nWorkspace", icon="gtk-home", handler=function(h,...) DFV.saveToWorkspace(dfv), tooltip="Save to workspace to resume working on these plots at a later time."), cont=dfv$pn$buttons.grp)
-  dfv$plotParams$errorMsg<-glabel("", cont=plot.frame)
-  lrPane <- gpanedgroup(left.grp,right.grp,container=dfs.tab, expand=TRUE)
-  
-  # save widgets (this way they will be autoloaded and autosaved from their corresponding settings)
-  setWidgets(gui, module, lrPane = lrPane, tbPane = tbPane)
+    
   
   # handlers
 #  addHandlerChanged(dfv$df.nb, handler=function(h,...) svalue(dfv$plotParams$df)<-names(h$obj)[h$pageno])
