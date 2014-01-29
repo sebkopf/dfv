@@ -80,7 +80,7 @@ setMethod("makeGui", "BaseGui", function(gui, module) {
   })
   
   # destroy window properly
-  addHandlerDestroy(win, function(h,...) getModule(gui, module)$cleanWidgets()) # clean all widgets
+  addHandlerDestroy(win, function(h,...) getModule(gui, module)$destroyGui()) # clean all widgets
   
   # save window in module
   setWidgets(gui, module, window = win)
@@ -107,7 +107,7 @@ setMethod("makeGui", "BaseGui", function(gui, module) {
 setMethod("destroyGui", "BaseGui", function(gui, module) {
   cat("I am a", class(gui), "and have module", gui@module, "and I am destroying my Gui.\n")
   dispose(getWindow(gui, module)) # destroy window
-  getModule(gui, module)$cleanWidgets() # clean all widget references
+  getModule(gui, module)$destroyGui() # clean all widget references
 })
 
 setMethod("showGui", "BaseGui", function(gui, module) {

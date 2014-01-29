@@ -90,7 +90,7 @@ GuiElement <- setRefClass(
     # 'Remove sub elements from the GuiElement
     removeElements = function(ids, cleanData = TRUE, cleanSettings = TRUE) {
       for (id in ids) {
-        elements[[id]]$cleanWidgets() # clean widgets
+        elements[[id]]$destroyGui() # destroy widghets
         if (cleanData)
           data[[id]] <<- NULL # clean data
         if (cleanSettings)
@@ -217,16 +217,17 @@ GuiElement <- setRefClass(
       setData(getWidgetValues(dataIds))
     },
     
-    # 'Cleans all widgets in this GuiElement and all contained GuiElements
-    cleanWidgets = function() {
-      for (element in elements) 
-        element$cleanWidgets()
-      widgets <<- list()
-    },
-    
     # make gui
     makeGui = function(...) {
       message("\tMaking Gui Element for ", class(.self))
+    },
+    
+    # 'Destroys all widgets in this GuiElement and all contained GuiElements
+    # 'FIXME: does this require more implicit 'destroy' treatment for the widgets to unrealize them properly?
+    destroyGui = function() {
+      for (ele in elements) 
+        ele$destroyGui()
+      widgets <<- list()
     },
     
     # load (autoload by default, including all elements)

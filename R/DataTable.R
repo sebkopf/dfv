@@ -136,7 +136,7 @@ DataTable <- setRefClass(
     destroyGui = function() {
       if (!is.null(widgets$tableGroup))
         gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
-      #callSuper()
+      callSuper()
     },
     
     # 'implement it with testthat package syntax and a modal dialog so user needs to click all buttons maybe?
