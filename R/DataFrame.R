@@ -1,9 +1,9 @@
-#' Class representing a reference class DataFrame that holds both basic 
+#' Class representing a reference class DataElement that holds both basic 
 #' data information and settings information.
 #' 
 #' This is a reference class so can be passed around the easily GUI for storing information.
-DataFrame <- setRefClass(
-  'DataFrame', 
+DataElement <- setRefClass(
+  'DataElement', 
   fields = list(
     data = 'list',
     settings = 'list',
