@@ -15,17 +15,24 @@ DataFrame <- setRefClass(
       
       ### default setting for a data frame
       setSettings(
-        wsVariable = paste0(class(.self), "_saved")
+        wsVariable = paste0(class(.self), "_saved"), # global variable in workspace to save to
+        wsFilePath = paste0(class(.self), "_saved.R") # file path in workspace to save to
       )
     },
     
     saveToWorkspace = function() {
-      message("Saving data and settings into global variable ", getSettings('wsVariable'), ".")
-      assign(getSettings('wsVariable'), list(
-          data = data,
-          settings = settings
-        ), envir=.GlobalEnv)
-      save.image()
+      if (!is.null(getSettings('wsVariable'))) {
+        message("Saving data and settings into global variable ", getSettings('wsVariable'), ".")
+        assign(getSettings('wsVariable'), list(
+            data = data,
+            settings = settings
+          ), envir=.GlobalEnv)
+        save.image()
+      }
+      if (!is.null(getSettings('filePath'))) {
+        message("Saving data and settings to file ", getSettings('filePath'), ".")
+        save(data, settings, file = getSettings('filePath'))
+      }
     },
     
     getSettings = function(ids) {
