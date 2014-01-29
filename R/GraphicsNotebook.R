@@ -147,8 +147,11 @@ GraphicsNotebook <- setRefClass(
               tab$saveGraphicsDeviceToPDF(filename = filepath, width = elements$savePlotDialog$data$width, height = elements$savePlotDialog$data$height)
             }
           }
+          
+          return (TRUE) # file saved
         }
       }
+      return (FALSE) # not saved
     },
     
     # 'Print active plot
@@ -201,60 +204,6 @@ GraphicsNotebook <- setRefClass(
 #     pn.newPlotTab(pn, tabObj=newPlotObj, label="Plot1", loadHandler=newPlotObjLoadHandler, eventHandlers=plotEventHandlers)
 #   
 #   return(pn)
-# }
-
-# save handler
-# save the plot with the provided index
-# if none is provided, save all plots
-pn.savePlotGui<-function(pn, index=NULL){
-  if (is.null(index)) { # save all plots
-    f=gfile("Select the folder where to save all the plots.", type="selectdir", cont=pn$win)
-  } else { # save index plot
-    f=gfile("Select where to save this graph.", type="save", cont=pn$win, 
-            initialfilename = paste(format(Sys.time(),format="%Y%m%d"),"_", names(pn$plot.nb)[index],".pdf", sep=""),
-            filter = list("PDF Files" = list(patterns=c("*.pdf")), "All files" = list(patterns = c("*"))))
-  }
-  
-  if (!is.na(f)){
-    grp<-ggroup(cont=(w<-gwindow("Save plot as pdf", width=200, height=100, spacing=30)), horizontal=FALSE, expand=TRUE)
-    dlggrp<-glayout(container=grp, spacing=10)
-    dlggrp[1,1]<-glabel("Width [inches]:",con=dlggrp)
-    dlggrp[1,2]<-(width <- gedit(8,container=dlggrp, coerce.with=as.numeric))
-    
-    dlggrp[2,1]<-glabel("Height [inches]:",con=dlggrp)
-    dlggrp[2,2]<-(height <- gedit(6,container=dlggrp, coerce.with=as.numeric))
-    
-    #dlggrp[3,1]<-glabel("Unit:",con=dlggrp)
-    #dlggrp[3,2]<-(units <- gcombobox(c("in","cm","mm"),container=dlggrp))
-    
-    gbutton("save", cont=grp, handler=function(h,...) {
-      if (is.null(index)) { # save all
-        for (i in 1:length(pn$plot.nb)) 
-          pn.savePlot(pn, i, file.path(f, paste(format(Sys.time(),format="%Y%m%d"),"_", names(pn$plot.nb)[i],".pdf", sep="")), width=svalue(width), height=svalue(height))
-      } else { # save just the current
-        if (length(grep("\\.pdf$", f))==0) f<-paste(f,".pdf",sep="") # ensure .pdf ending
-        pn.savePlot(pn, index, f, width=svalue(width), height=svalue(height))
-      }
-      pn.reactivatePlot(pn) # reactivate previously active plot
-      dispose(w)
-    })
-  }
-}
-
-# save the plot with the given index
-# pn.savePlot<-function(pn, index, file, width=8, height=6) {
-#   pn.activatePlot(pn, index)
-#   dev.copy2pdf(file=file, width=width, height=height) # copy graph
-# }
-
-# print the plot with the given index
-# pn.printPlot<-function(pn, index, width=8, height=6) {
-#   if (exists("win.print")) { # on windows, go print
-#     pn.activatePlot(pn, index)
-#     win.print(width=width, height=height) # launches print interface
-#     pn.activatePlot(pn, index) # reactivate graphics device
-#   } else 
-#     gmessage("Sorry, direct printing is not yet supported on Linux/MacOS.\nPlease save the plot as a pdf and print from there.")
 # }
 
 # make new plot tab

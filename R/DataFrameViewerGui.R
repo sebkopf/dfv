@@ -71,12 +71,12 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
       list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
       list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
       list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { 
-        gn$savePlot() 
-        showInfo(gui, module, "Plot saved to PDF.", timer=2, okButton=FALSE)
+        if (gn$savePlot())
+          showInfo(gui, module, "Plot saved to PDF.", timer=2, okButton=FALSE)
         } ),
       list ("SaveAllPlots", gn$icons$SAVE.ALL, "Save all plots", "<ctrl><shift>S", NULL, function(...) { 
-        gn$savePlot(saveAll = TRUE) 
-        showInfo(gui, module, "All plots saved to PDF.", timer=2, okButton=FALSE)
+        if (gn$savePlot(saveAll = TRUE))
+          showInfo(gui, module, "All plots saved to PDF.", timer=2, okButton=FALSE)
         } ),
       list ("PrintPlot", gn$icons$PRINT.PLOT, "Print plot", NULL, NULL, function(...) { gn$printPlot() } ),
       list ("Help" , NULL , "_Help" , NULL , NULL , NULL ),
