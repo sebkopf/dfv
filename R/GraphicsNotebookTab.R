@@ -36,7 +36,7 @@ GraphicsNotebookTab <- setRefClass(
     rightclickmenuHandler = function(...) dmsg("rightclickmenuhandler, params: ", paste(list(...), collapse=", ")),
     
     #' Expects nb = gnotebook ...
-    makeGUI = function(...) {
+    makeGui = function(...) {
       nb <- list(...)$parent 
       grp <- ggroup(cont = nb, horizontal=FALSE, label = data$label)
       if (settings$editablePlotLabel) {
@@ -44,7 +44,7 @@ GraphicsNotebookTab <- setRefClass(
         addHandlerKeystroke(widgets$label, handler=function(h,...) {
           saveWidgets('label')
           names(nb)[svalue(nb)] <- getData('label')
-        } ) # update notebook, data itself is later saved during a saveGUI() event
+        } ) # update notebook, data itself is later saved during a saveGui() event
       }
       widgets$gg <<- ggraphics(cont=grp)
       

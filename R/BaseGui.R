@@ -1,4 +1,4 @@
-# Generic functions that GUI classes can attach to
+# Generic functions that Gui classes can attach to
 
 # convenience for interacting with the module
 setGeneric("getModule", function(gui, module, id) standardGeneric("getModule")) # enables multi-module interfaces
@@ -12,12 +12,12 @@ setGeneric("getData", function(gui, module, ids) standardGeneric("getData"))
 setGeneric("setData", function(gui, module, ...) standardGeneric("setData"))
 
 # making the gui
-setGeneric("makeGUI", function(gui, module) standardGeneric("makeGUI"))
-setGeneric("destroyGUI", function(gui, module) standardGeneric("destroyGUI"))
-setGeneric("showGUI", function(gui, module) standardGeneric("showGUI"))
-setGeneric("hideGUI", function(gui, module) standardGeneric("hideGUI"))
+setGeneric("makeGui", function(gui, module) standardGeneric("makeGui"))
+setGeneric("destroyGui", function(gui, module) standardGeneric("destroyGui"))
+setGeneric("showGui", function(gui, module) standardGeneric("showGui"))
+setGeneric("hideGui", function(gui, module) standardGeneric("hideGui"))
 
-# specific functions streamlining GUI design but that are not intended to be derived
+# specific functions streamlining Gui design but that are not intended to be derived
 setGeneric("getNavigationXML", function(gui, module) standardGeneric("getNavigationXML"))
 setGeneric("makeNavigation", function(gui, module) standardGeneric("makeNavigation"))
 setGeneric("makeInfoBar", function(gui, module) standardGeneric("makeInfoBar"))
@@ -28,13 +28,13 @@ setGeneric("getWinGroup", function(gui, module) standardGeneric("getWinGroup"))
 setGeneric("setMenuGroup", function(gui, module, menuGroup) standardGeneric("setMenuGroup"))
 setGeneric("setToolbarGroup", function(gui, module, toolbarGroup) standardGeneric("setToolbarGroup"))
 
-# functions that are intended to be extended in GUI derived classes
+# functions that are intended to be extended in Gui derived classes
 setGeneric("getMenuXML", function(gui, module) standardGeneric("getMenuXML"))
 setGeneric("getToolbarXML", function(gui, module) standardGeneric("getToolbarXML"))
-setGeneric("makeMainGUI", function(gui, module) standardGeneric("makeMainGUI"))
+setGeneric("makeMainGui", function(gui, module) standardGeneric("makeMainGui"))
 setGeneric("setNavigationActions", function(gui, module, actionGrp) standardGeneric("setNavigationActions"))
 
-# other utility functions for interacting with the GUI
+# other utility functions for interacting with the Gui
 setGeneric("showInfo", function(gui, module, msg, type="question", timer=2, okButton=TRUE) standardGeneric("showInfo"))
 setGeneric("hideInfo", function(gui, module) standardGeneric("hideInfo"))
 
@@ -42,11 +42,11 @@ setGeneric("hideInfo", function(gui, module) standardGeneric("hideInfo"))
 # Class #
 #########
 
-# S4 class GUI
-GUI <- setClass("BaseGUI", representation = list(module="character")) 
+# S4 class Gui
+Gui <- setClass("BaseGui", representation = list(module="character")) 
                 # module = which module this belongs to, is automatically set by the module
 
-setMethod("initialize", "BaseGUI", function(.Object, ...) {
+setMethod("initialize", "BaseGui", function(.Object, ...) {
   callNextMethod(.Object, ...)
 })
 
@@ -54,8 +54,8 @@ setMethod("initialize", "BaseGUI", function(.Object, ...) {
 # general Methods #
 ###################
 
-setMethod("makeGUI", "BaseGUI", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am making my GUI.\n")
+setMethod("makeGui", "BaseGui", function(gui, module) {
+  cat("I am a", class(gui), "and have module", gui@module, "and I am making my Gui.\n")
   options("guiToolkit"="RGtk2") # everything is written in RGtk2
   
   # make window
@@ -72,10 +72,10 @@ setMethod("makeGUI", "BaseGUI", function(gui, module) {
       height=getSettings(gui, module, "windowSize")[2])
   }
   
-  # attach GUI load event to focus handler to enable modal dialog loading
+  # attach Gui load event to focus handler to enable modal dialog loading
   visHandler <- addHandlerFocus(win, handler=function(...) {
-    dmsg("\tLoading GUI...")
-    getModule(gui, module)$loadGUI()
+    dmsg("\tLoading Gui...")
+    getModule(gui, module)$loadGui()
     blockHandler(win, ID=visHandler)
   })
   
@@ -99,35 +99,35 @@ setMethod("makeGUI", "BaseGUI", function(gui, module) {
   # make info bar
   makeInfoBar(gui, module)
   
-  # main make GUI
-  makeMainGUI(gui, module)
+  # main make Gui
+  makeMainGui(gui, module)
   makeNavigation(gui, module)
 })
 
-setMethod("destroyGUI", "BaseGUI", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am destroying my GUI.\n")
+setMethod("destroyGui", "BaseGui", function(gui, module) {
+  cat("I am a", class(gui), "and have module", gui@module, "and I am destroying my Gui.\n")
   dispose(getWindow(gui, module)) # destroy window
   getModule(gui, module)$cleanWidgets() # clean all widget references
 })
 
-setMethod("showGUI", "BaseGUI", function(gui, module) {
+setMethod("showGui", "BaseGui", function(gui, module) {
   if (is.null(getWindow(gui, module)))
-    makeGUI(gui, module)
-  cat("I am a", class(gui), "and have module", gui@module, "and I am showing my GUI now.\n")
+    makeGui(gui, module)
+  cat("I am a", class(gui), "and have module", gui@module, "and I am showing my Gui now.\n")
   visible(getWindow(gui, module), TRUE)
 })
 
-setMethod("hideGUI", "BaseGUI", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am hiding my GUI.\n")
+setMethod("hideGui", "BaseGui", function(gui, module) {
+  cat("I am a", class(gui), "and have module", gui@module, "and I am hiding my Gui.\n")
   if (!is.null(getWindow(gui, module)))
     visible(getWindow(gui, module), FALSE)
 })
 
 ################################
-# methods for streamlining GUI #
+# methods for streamlining Gui #
 ################################
 
-setMethod("getNavigationXML", "BaseGUI", function(gui, module) {
+setMethod("getNavigationXML", "BaseGui", function(gui, module) {
   return(paste(
     '<ui>',
       '<menubar name="menubar">',
@@ -139,7 +139,7 @@ setMethod("getNavigationXML", "BaseGUI", function(gui, module) {
     '</ui>', sep="\n"))
 })
 
-setMethod("makeNavigation", "BaseGUI", function(gui, module) {
+setMethod("makeNavigation", "BaseGui", function(gui, module) {
   
   # navigation actions
   cat("\tInitializing Navigation.\n")
@@ -170,7 +170,7 @@ setMethod("makeNavigation", "BaseGUI", function(gui, module) {
   
 })
 
-setMethod("makeInfoBar", "BaseGUI", function(gui, module){
+setMethod("makeInfoBar", "BaseGui", function(gui, module){
   infoBar <- gtkInfoBar (show=FALSE) 
   infoBar$setNoShowAll(TRUE)
   infoLabel <- gtkLabel ( "Warning , Warning")
@@ -187,7 +187,7 @@ setMethod("makeInfoBar", "BaseGUI", function(gui, module){
 #' type - styling of the mssage, info, error, question, warning are the standard ones
 #' timer - time in seconds until message disappears automatically
 #' okButton - whether there is an ok button or not
-setMethod("showInfo", "BaseGUI", function(gui, module, msg, type="question", timer=2, okButton=TRUE) {
+setMethod("showInfo", "BaseGui", function(gui, module, msg, type="question", timer=2, okButton=TRUE) {
   cat("\tShowing info message for", timer, "seconds.\n")
   getWidgets(gui, module, 'infoBar')$setMessageType(type)
   getWidgets(gui, module, 'infoLabel')$setText(msg)
@@ -203,7 +203,7 @@ setMethod("showInfo", "BaseGUI", function(gui, module, msg, type="question", tim
 })
 
 # hide info bar
-setMethod("hideInfo", "BaseGUI", function(gui, module) {
+setMethod("hideInfo", "BaseGui", function(gui, module) {
   cat("\tHiding info message.\n")
   getWidgets(gui, module, 'infoBar')$hide()
 })
@@ -213,51 +213,51 @@ setMethod("hideInfo", "BaseGUI", function(gui, module) {
 # methods that are supposed to be extended #
 ############################################
 
-setMethod("getMenuXML", "BaseGUI", function(gui, module) { return('') })
+setMethod("getMenuXML", "BaseGui", function(gui, module) { return('') })
 
-setMethod("getToolbarXML", "BaseGUI", function(gui, module) { return('') })
+setMethod("getToolbarXML", "BaseGui", function(gui, module) { return('') })
 
-setMethod("makeMainGUI", "BaseGUI", function(gui, module) {})
+setMethod("makeMainGui", "BaseGui", function(gui, module) {})
 
-setMethod("setNavigationActions", "BaseGUI", function(gui, module, actionGrp) { })
+setMethod("setNavigationActions", "BaseGui", function(gui, module, actionGrp) { })
 
 ######################################################
 # Convenience functions for interacting with the module #
 ######################################################
 
-setMethod("getModule", "BaseGUI", function(gui, module) {
+setMethod("getModule", "BaseGui", function(gui, module) {
   return(module$getModule(gui@module))
 })
 
-setMethod("getElements", "BaseGUI", function(gui, module, ids) {
+setMethod("getElements", "BaseGui", function(gui, module, ids) {
   return(getModule(gui, module)$getElements(ids))
 })
 
-setMethod("setElements", "BaseGUI", function(gui, module, ...) {
+setMethod("setElements", "BaseGui", function(gui, module, ...) {
   return(getModule(gui, module)$setElements(...))
 })
 
-setMethod("getWidgets", "BaseGUI", function(gui, module, ids) {
+setMethod("getWidgets", "BaseGui", function(gui, module, ids) {
   return(getModule(gui, module)$getWidgets(ids))
 })
 
-setMethod("setWidgets", "BaseGUI", function(gui, module, ...) {
+setMethod("setWidgets", "BaseGui", function(gui, module, ...) {
   return(getModule(gui, module)$setWidgets(...))
 })
 
-setMethod("getSettings", "BaseGUI", function(gui, module, ids) {
+setMethod("getSettings", "BaseGui", function(gui, module, ids) {
   return(getModule(gui, module)$getSettings(ids))
 })
 
-setMethod("setSettings", "BaseGUI", function(gui, module, ...) {
+setMethod("setSettings", "BaseGui", function(gui, module, ...) {
   return(getModule(gui, module)$setSettings(...))
 })
 
-setMethod("getData", "BaseGUI", function(gui, module, ids) {
+setMethod("getData", "BaseGui", function(gui, module, ids) {
   return(getModule(gui, module)$getData(ids))
 })
 
-setMethod("setData", "BaseGUI", function(gui, module, ...) {
+setMethod("setData", "BaseGui", function(gui, module, ...) {
   return(getModule(gui, module)$setData(...))
 })
 
@@ -265,18 +265,18 @@ setMethod("setData", "BaseGUI", function(gui, module, ...) {
 # Getting and Setting key widgets #
 ###################################
 
-setMethod("getWindow", "BaseGUI", function(gui, module) {
+setMethod("getWindow", "BaseGui", function(gui, module) {
   return(getWidgets(gui, module, "window"))
 })
 
-setMethod("getWinGroup", "BaseGUI", function(gui, module) {
+setMethod("getWinGroup", "BaseGui", function(gui, module) {
   return(getWidgets(gui, module, "winGroup"))
 })
 
-setMethod("setMenuGroup", "BaseGUI", function(gui, module, menuGroup) {
+setMethod("setMenuGroup", "BaseGui", function(gui, module, menuGroup) {
   setWidgets(gui, module, menuGroup = menuGroup)
 })
 
-setMethod("setToolbarGroup", "BaseGUI", function(gui, module, toolbarGroup) {
+setMethod("setToolbarGroup", "BaseGui", function(gui, module, toolbarGroup) {
   setWidgets(gui, module, toolbarGroup = toolbarGroup)
 })

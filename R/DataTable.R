@@ -15,9 +15,9 @@ DataTable <- setRefClass(
     # 'Makes the gtable. If it already exists in the widgets, will delete the existing one first and then remake it.
     # '@param parent (RGtkWidget) - some container like a ggroup
     # '@param data (data.frame) - a data frame (will only use the definition, not the whole data)
-    makeGUI = function(parent, data, expand = TRUE, invisible = c(), changedHandler = NULL, ...) {
+    makeGui = function(parent, data, expand = TRUE, invisible = c(), changedHandler = NULL, ...) {
       
-      #INFO: for more information on this kind of data table layout, look at page 166+ of the R GUI guidebook!
+      #INFO: for more information on this kind of data table layout, look at page 166+ of the R Gui guidebook!
       # topics include styling, how to have filters for columns (serachable --> look on page 172+), multiple selections, tooltips, signals, etc.
       
       # store data
@@ -132,8 +132,8 @@ DataTable <- setRefClass(
       selectRows(indices, blockHandler = blockHandler)
     },
     
-    # FIXME: implement destroy GUI properly in base classes
-    destroyGUI = function() {
+    # FIXME: implement destroy Gui properly in base classes
+    destroyGui = function() {
       if (!is.null(widgets$tableGroup))
         gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
       #callSuper()
@@ -154,15 +154,15 @@ DataTable <- setRefClass(
       gbutton ("Hide column b", cont=bgrp, handler = function(...) print("test"))
       gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues('a', 4))
       gbutton ("Remake table", cont=bgrp, handler = function(...) {
-        test$destroyGUI()
-        test$makeGUI(tgrp, data.frame(adiff='hello', bdiff=1:10))
+        test$destroyGui()
+        test$makeGui(tgrp, data.frame(adiff='hello', bdiff=1:10))
       })
       
       # running the DataTable
       test <- DataTable$new()
-      test$makeGUI(tgrp, data.frame(a=1:5, b='test', c='wurst'), invisible = c(), changedHandler = function(...) print(test$getSelectedValues()))
+      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst'), invisible = c(), changedHandler = function(...) print(test$getSelectedValues()))
     }
   )
 )
 
-DataTable$new()$test()
+#DataTable$new()$test()

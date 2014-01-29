@@ -5,7 +5,7 @@ Version: 1.0
 Date: 2013-11-01
 Authors@R: c(
   person("Sebastian", "Kopf", role = c("aut", "cre"), email = "seb.kopf@gmail.com"))
-Description: GUI to facilitate getting started with using data frames and ggplot to explore data.
+Description: Gui to facilitate getting started with using data frames and ggplot to explore data.
 Depends:
     R (>= 2.15),  
     ggplot2,
@@ -18,8 +18,8 @@ Depends:
 License: GPL (>= 2)
 Collate:
   'dfv.R'
-  'BaseGUI.R'
-  'DataFrameViewerGUI.R'
+  'BaseGui.R'
+  'DataFrameViewerGui.R'
   'DataElement.R'
   'GuiElement.R'
   'Module.R'

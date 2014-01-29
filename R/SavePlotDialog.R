@@ -1,6 +1,6 @@
-SavePlotDialogGUI <- setClass("SavePlotDialogGUI", contains="ModalDialogGUI")
+SavePlotDialogGui <- setClass("SavePlotDialogGui", contains="ModalDialogGui")
 
-setMethod("makeMainGUI", "SavePlotDialogGUI", function(gui, module) {
+setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
   treeGrp <- ggroup(horizontal=FALSE, expand=TRUE)
   optionsGrp <- gframe("Options", horizontal=FALSE)
@@ -74,7 +74,7 @@ SavePlotDialog <- setRefClass(
   'SavePlotDialog',
   contains = 'ModalDialog',
   methods = list(
-    initialize = function(gui = SavePlotDialogGUI(), ...){
+    initialize = function(gui = SavePlotDialogGui(), ...){
       callSuper(gui = gui, ...)
       
       ### overwrite default setting for SavePlotDialog
@@ -105,7 +105,7 @@ SavePlotDialog <- setRefClass(
       )
     },
     
-    loadGUI = function() {
+    loadGui = function() {
       callSuper()
       
       # set formats table
@@ -115,7 +115,7 @@ SavePlotDialog <- setRefClass(
       svalue(widgets$optionsTable, index=FALSE) <<- subset(data$options, width == data$width & height == data$height)$Dimensions
     }, 
     
-    saveGUI = function() {
+    saveGui = function() {
       callSuper()
       # save width and height in options
       data$options <<- rbind(data$options, data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))# add used widht and height to settings

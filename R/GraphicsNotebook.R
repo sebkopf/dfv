@@ -37,7 +37,7 @@ GraphicsNotebook <- setRefClass(
     activateGraphicsDevice = function() getActiveTab()$activateGraphicsDevice(),
     
     # 'Excepts a container in ...
-    makeGUI = function(...) {
+    makeGui = function(...) {
       # save dialog
       setElements('savePlotDialog' = SavePlotDialog$new()) 
       
@@ -68,9 +68,9 @@ GraphicsNotebook <- setRefClass(
       l[[paste0('tab', tabID)]] <- newTab
       setElements(l, passSettings = FALSE) # Note: the tab settings can not be changed by the user, only tab data
       
-      # make GUI for new plot tab
+      # make Gui for new plot tab
       dmsg("Adding GraphicsNotebook Tab with TABID: ", tabID)
-      newTab$makeGUI(parent = widgets$nb)
+      newTab$makeGui(parent = widgets$nb)
       
       # unblock handlers
       unblockHandler(widgets$nb, handlers$nb.changedHandler)      
@@ -132,7 +132,7 @@ GraphicsNotebook <- setRefClass(
           getElements("savePlotDialog")$setData(filename = paste0(format(Sys.time(),format="%Y%m%d"), "_"), extension = "[tab title].pdf")
         }
           
-        getElements("savePlotDialog")$makeGUI() # this is a modal dialog so method will not continue until it is done
+        getElements("savePlotDialog")$makeGui() # this is a modal dialog so method will not continue until it is done
         if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
           dmsg("settings :", elements$savePlotDialog$getData())
           
@@ -163,14 +163,14 @@ GraphicsNotebook <- setRefClass(
 
 #FOR TESTING PURPOSES
 #win<-gwindow("blub")
-#pn.GUI(gframe(cont=win, horizontal=FALSE), win)
+#pn.Gui(gframe(cont=win, horizontal=FALSE), win)
 
-# make GUI forplot notbook
+# make Gui forplot notbook
 # new plot objs = list() object defining what kind of parameters are on a plot object by default
 # - the load handlers are just passed the currently selected plot object for doing whatever they want with it
 # add event handlers to the plot as needed, currently supported: "droptarget", "Clicked", "Rightclick", "MouseMotion"
 # --> pass like this plotEventHandlers=list(droptarget=fun, Clicked=fun)
-# pn.GUI<-function(container, window, newPlotObj=NULL, 
+# pn.Gui<-function(container, window, newPlotObj=NULL, 
 #                  newPlotObjLoadHandler=NULL, plotObjLoadHandler=NULL, plotEventHandlers=list(),
 #                  enablePlotLabel=TRUE, enableMenuButtons=TRUE, startWithTab=TRUE){
 #   
@@ -184,9 +184,9 @@ GraphicsNotebook <- setRefClass(
 #   pn$actions<-list(
 #     aNewPlot = list(label="New Plot", icon="gtk-page-setup", handler=function(...) pn.newPlotTab(pn, tabObj=newPlotObj, eventHandlers=plotEventHandlers, loadHandler=newPlotObjLoadHandler, label=paste("Plot", length(pn$plot.nb)+1, sep="")) ),
 #     aClosePlot = list(label="Close Plot", icon="gtk-cancel", handler=function(...) pn.deletePlotTab(pn, loadHandler=plotObjLoadHandler)), 
-#     aSavePlot = list(label="Save Plot", icon="gtk-save-as", handler=function(...) pn.savePlotGUI(pn, index=svalue(pn$plot.nb))), 
+#     aSavePlot = list(label="Save Plot", icon="gtk-save-as", handler=function(...) pn.savePlotGui(pn, index=svalue(pn$plot.nb))), 
 #     aPrintPlot = list(label="Print Plot", icon="gtk-print", handler=function(...) pn.printPlot(pn, index=svalue(pn$plot.nb))), 
-#     aSaveAll = list(label="Save All", icon="gtk-harddisk", handler=function(...) pn.savePlotGUI(pn)))
+#     aSaveAll = list(label="Save All", icon="gtk-harddisk", handler=function(...) pn.savePlotGui(pn)))
 #   if (enableMenuButtons) {
 #     pn$buttons.grp<-ggroup(cont=container, horizontal=TRUE)
 #     addSpring(pn$buttons.grp)
@@ -206,7 +206,7 @@ GraphicsNotebook <- setRefClass(
 # save handler
 # save the plot with the provided index
 # if none is provided, save all plots
-pn.savePlotGUI<-function(pn, index=NULL){
+pn.savePlotGui<-function(pn, index=NULL){
   if (is.null(index)) { # save all plots
     f=gfile("Select the folder where to save all the plots.", type="selectdir", cont=pn$win)
   } else { # save index plot

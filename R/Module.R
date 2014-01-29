@@ -7,13 +7,13 @@ Module <- setRefClass(
   'Module',
   contains = 'GuiElement',
   fields = list(
-    gui = 'BaseGUI' # an S4 gui class
+    gui = 'BaseGui' # an S4 gui class
   ), 
   methods = list(
      initialize = function(...){
        callSuper(...)
        
-       # so the GUI knows which module it belongs to (for multi module GUIs)
+       # so the Gui knows which module it belongs to (for multi module Guis)
        gui@module <<- class(.self) 
        
        ### default setting for a module
@@ -25,15 +25,15 @@ Module <- setRefClass(
        )
      },
     
-     #' Get module (flexibility for multi module GUIs)
+     #' Get module (flexibility for multi module Guis)
      getModule = function(name = 'Module') {
         return (.self) # standalone module always returns itself
      },
      
      #' Module make function
-     makeGUI = function(...) {
-       showGUI(gui, .self) # show module GUI
-       # Note: the loadGUI() function is executed via the BaseGUI through the focusHandler to enable data loading in modal dialogs
+     makeGui = function(...) {
+       showGui(gui, .self) # show module Gui
+       # Note: the loadGui() function is executed via the BaseGui through the focusHandler to enable data loading in modal dialogs
      }
   )
 )

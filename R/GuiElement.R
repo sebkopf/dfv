@@ -11,7 +11,7 @@ GuiElement <- setRefClass(
     
     # 'Override to pull data and settings also from all sub Elements
     saveToWorkspace = function() {
-      saveGUI() # save the GUI (transfers information from the widgets to the settings and data lists)
+      saveGui() # save the Gui (transfers information from the widgets to the settings and data lists)
       data <<- getData() 
       settings <<- getSettings() 
       callSuper() # actually save to workspace
@@ -225,25 +225,25 @@ GuiElement <- setRefClass(
     },
     
     # make gui
-    makeGUI = function(...) {
+    makeGui = function(...) {
       message("\tMaking Gui Element for ", class(.self))
     },
     
     # load (autoload by default, including all elements)
-    loadGUI = function() {
+    loadGui = function() {
       autoloadWidgets()
       for (ele in elements) {
         if (length(ele$widgets) > 0) # only load if there are any widgets, i.e. gui is actualyl initialized
-          ele$loadGUI()
+          ele$loadGui()
       }
     },
     
     # save (save all widgets by default, including all elements)
-    saveGUI = function() {
+    saveGui = function() {
       saveWidgets()
       for (ele in elements) {
         if (length(ele$widgets) > 0) # only save if there are any widgets, i.e. gui is actualyl initialized
-          ele$saveGUI()
+          ele$saveGui()
       }
     }
   )

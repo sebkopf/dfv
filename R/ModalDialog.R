@@ -1,9 +1,9 @@
 # ' This module is a basic implementation of a modal dialog and can be extended easily
 
-ModalDialogGUI <- setClass("ModalDialogGUI", contains="BaseGUI")
+ModalDialogGui <- setClass("ModalDialogGui", contains="BaseGui")
 
 
-setMethod("getToolbarXML", "ModalDialogGUI", function(gui, module) {
+setMethod("getToolbarXML", "ModalDialogGui", function(gui, module) {
   return (
     nav <- '
     <separator expand="true"/>
@@ -15,23 +15,23 @@ setMethod("getToolbarXML", "ModalDialogGUI", function(gui, module) {
   )
 })
 
-setMethod("setNavigationActions", "ModalDialogGUI", function(gui, module, actionGrp) {
+setMethod("setNavigationActions", "ModalDialogGui", function(gui, module, actionGrp) {
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
       list ("Ok", getSettings(gui, module, "ok.icon"), getSettings(gui, module, "ok.label") , NULL, getSettings(gui, module, "ok.tooltip"), 
             function(...) {
               setData(gui, module, saved = TRUE)
-              getModule(gui, module)$saveGUI()
-              destroyGUI(gui, module)
+              getModule(gui, module)$saveGui()
+              destroyGui(gui, module)
             } ),
       list ("Cancel" , getSettings(gui, module, "cancel.icon"), getSettings(gui, module, "cancel.label") , NULL, getSettings(gui, module, "cancel.tooltip"), 
             function(...) { 
-              destroyGUI(gui, module)
+              destroyGui(gui, module)
             }))
   actionGrp$addActions(nav.actions)
 })
 
-setMethod("makeNavigation", "ModalDialogGUI", function(gui, module) {
+setMethod("makeNavigation", "ModalDialogGui", function(gui, module) {
   # set toolbar at the end of screen
   setToolbarGroup(gui, module, ggroup(horizontal=TRUE, cont=getWinGroup(gui, module), spacing=0, expand=FALSE))
   callNextMethod(gui, module)
@@ -41,7 +41,7 @@ ModalDialog <- setRefClass(
   'ModalDialog',
   contains = 'Module',
   methods = list(
-    initialize = function(gui = ModalDialogGUI(), ...){
+    initialize = function(gui = ModalDialogGui(), ...){
       callSuper(gui = gui, ...)
       
       ### default setting for ModalDialog
@@ -58,7 +58,7 @@ ModalDialog <- setRefClass(
       )
     }, 
 
-    loadGUI = function() {
+    loadGui = function() {
       callSuper()
       setData(saved = FALSE) # records response from dialog
     },

@@ -1,7 +1,7 @@
-# S4 class DataFrameViewerGUI
-DataFrameViewerGUI <- setClass("DataFrameViewerGUI", contains="BaseGUI")
+# S4 class DataFrameViewerGui
+DataFrameViewerGui <- setClass("DataFrameViewerGui", contains="BaseGui")
 
-setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
+setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
   return (
     '<menu name = "DFV" action="DFV">
       <menuitem action="Reload"/>
@@ -28,7 +28,7 @@ setMethod("getMenuXML", "DataFrameViewerGUI", function(gui, module) {
     </menu>')
 })
 
-setMethod("getToolbarXML", "DataFrameViewerGUI", function(gui, module) {
+setMethod("getToolbarXML", "DataFrameViewerGui", function(gui, module) {
   return (
     nav <- '
     <toolitem action="SaveToWS"/>
@@ -46,21 +46,21 @@ setMethod("getToolbarXML", "DataFrameViewerGUI", function(gui, module) {
   )
 })
 
-setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, actionGrp) {
+setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, actionGrp) {
   gn <- getElements(gui, module, 'gn') # graphic notebook
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
       list ("DFV" , NULL , "_DFV" , NULL , NULL , NULL ),
       list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut! (enable code execution instead)
-          destroyGUI(gui, module)
-          getModule(gui, module)$makeGUI()
+          destroyGui(gui, module)
+          getModule(gui, module)$makeGui()
         }), 
       list ("SaveToWS" , "gtk-home" , "Save DFV" , "<ctrl>H" ,"Save settings and data to workspace" , function(...) { 
         showInfo(gui, module, "Saving to workspace...", timer=1, okButton=FALSE)
         getModule(gui, module)$saveToWorkspace()
         showInfo(gui, module, "Data Frame Viewer settings and data succesfully saved to workspace.", timer=2, okButton=FALSE)
       }) , 
-      list ("Quit", "gtk-quit", "Quit", "<ctrl>Q", "Quit program", function(...) destroyGUI(gui, module) ),
+      list ("Quit", "gtk-quit", "Quit", "<ctrl>Q", "Quit program", function(...) destroyGui(gui, module) ),
       list ("Data", NULL , "_Data" , NULL, NULL, NULL),
       list ("Paste", "gtk-copy", "Paste Data", NULL, "Paste data from the clipboard", function(...) { dmsg("paste") } ),
       list ("ImportExcel", "gtk-convert", "Import data", NULL, "Import data from excel spreadsheet", function(...) { dmsg("excel import") } ),
@@ -86,7 +86,7 @@ setMethod("setNavigationActions", "DataFrameViewerGUI", function(gui, module, ac
   actionGrp$addActions(nav.actions)
 })
 
-setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
+setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
   # top level groups
   setMenuGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
@@ -145,7 +145,7 @@ setMethod("makeMainGUI", "DataFrameViewerGUI", function(gui, module) {
   tab$setSettings(editablePlotLabel = TRUE, overwriteProtected = TRUE)
   gn <- GraphicsNotebook$new(tab = tab)
   setElements(gui, module, gn = gn)
-  gn$makeGUI(parent = plot.frame)
+  gn$makeGui(parent = plot.frame)
     
   
   # handlers
