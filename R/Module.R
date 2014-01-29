@@ -1,11 +1,11 @@
-#' A gui element data frame that has a whole user interface associated with it.
+#' A module is a GuiElement that has a whole user interface associated with it.
 #' 
 #' \code{Module$new()} initiates the module.
 #' 
 #' @method launch shows the user interface linked to this module
 Module <- setRefClass(
   'Module',
-  contains = 'GuiElementDataFrame',
+  contains = 'GuiElement',
   fields = list(
     gui = 'BaseGUI' # an S4 gui class
   ), 

@@ -27,3 +27,4 @@ Collate:
   'SavePlotDialog.R'
   'GraphicsNotebookTab.R'
   'GraphicsNotebook.R'
+  'DataTable.R'

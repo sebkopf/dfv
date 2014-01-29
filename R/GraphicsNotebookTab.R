@@ -4,7 +4,7 @@
 #'        for multigraphics, use definition scheme similar to layout in multiplot
 GraphicsNotebookTab <- setRefClass(
   'GraphicsNotebookTab',
-  contains = 'GuiElementDataFrame', 
+  contains = 'GuiElement', 
   fields = list(
     handlers = 'list' # handlers that the gui element needs to keep track of
   ),

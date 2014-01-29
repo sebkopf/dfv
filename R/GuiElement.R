@@ -1,8 +1,8 @@
 #' A data frame that is linked to an element of the user interface (which can contain widgets and other GuiElements)
 #' 
-GuiElementDataFrame <- setRefClass(
-  'GuiElementDataFrame',
-  contains = 'DataFrame',
+GuiElement <- setRefClass(
+  'GuiElement',
+  contains = 'DataElement',
   fields = list(
     widgets = 'list', # list of all the widgets to keep track of
     elements = 'list' # list of all the sub GuiElements to keep track of
@@ -125,7 +125,7 @@ GuiElementDataFrame <- setRefClass(
       # check if value is supplied or availabe in the data
       if (missing(value)) {
         if (is.null(value <- settings[[id]]) && is.null(value <- data[[id]])) { # settings first, then data
-          message("WARNING: trying to load widget", id, "but no value supplied and no corresponding settings or data field found in this GuiElementDataFrame")
+          message("WARNING: trying to load widget", id, "but no value supplied and no corresponding settings or data field found in this GuiElement")
           return(NULL)
         } 
       } else if (is.null(value)) {

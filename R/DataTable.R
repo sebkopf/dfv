@@ -1,7 +1,7 @@
 #' Class implementing a data table as a GuiElement
 DataTable <- setRefClass(
   'DataTable',
-  contains = 'GuiElementDataFrame', 
+  contains = 'GuiElement', 
   fields = list(
     icons = 'list', # keeps track of main icons this GuiElement uses 
     handlers = 'list', # handlers that the gui element needs to keep track of

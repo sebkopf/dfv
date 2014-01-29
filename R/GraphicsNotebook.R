@@ -1,7 +1,7 @@
 #' Class implementing a fully flexible graphics notebook as a GuiElement
 GraphicsNotebook <- setRefClass(
   'GraphicsNotebook',
-  contains = 'GuiElementDataFrame', 
+  contains = 'GuiElement', 
   fields = list(
     tab = 'GraphicsNotebookTab',
     icons = 'list', # keeps track of main icons this GuiElement uses
