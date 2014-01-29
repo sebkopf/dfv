@@ -85,9 +85,12 @@ DataTable <- setRefClass(
       if (identical(class(columns), 'character'))
         columns <- which(colnames(table$model)%in%columns)
       
-      df <- data.frame(table$model[rows, columns], stringsAsFactors=FALSE)
-      names(df) <- colnames(table$model)[columns]
-      return(df)
+      if (length(columns) > 0) {
+        df <- data.frame(table$model[rows, columns], stringsAsFactors=FALSE)
+        names(df) <- colnames(table$model)[columns]
+        return(df)
+      } else
+        return (NULL) # no columns!
     },
     
     # 'Get the indices of the selected rows
@@ -106,7 +109,7 @@ DataTable <- setRefClass(
     },
     
     # ' @indices - which indices to select
-    # ' @values - list 
+    # ' @param - blockHandler (whether to block selection handler from triggering)
     selectRows = function(indices, blockHandler = FALSE) {
       # block handler if requested
       if (blockHandler)
@@ -114,8 +117,10 @@ DataTable <- setRefClass(
       
       # make selection
       table$selection$unselectAll()
-      for (index in indices)
+      if (length(indices) > 0) {
+        for (index in indices)
           table$selection$selectPath(gtkTreePathNewFromIndices(index-1))
+      }
       
       # unblock handler
       if (blockHandler)
@@ -142,16 +147,20 @@ DataTable <- setRefClass(
       
       options("guiToolkit"="RGtk2")
       win <- ggroup(horizontal = FALSE, cont=gwindow("DataTable test window"), expand=TRUE)
-      grp <- ggroup(horizontal = TRUE, cont=win)
+      bgrp <- ggroup(horizontal = TRUE, cont=win)
+      tgrp <- ggroup(cont = win, expand=TRUE)
       
       # test implementations
-      gbutton ("Hide column b", cont=grp, handler = function(...) print("test"))
-      gbutton ("Select row a=4", cont=grp, handler = function(...) test$selectRowsByValues('a', 4))
-      gbutton ("Destroy table", cont=grp, handler = function(...) test$destroyGUI())
+      gbutton ("Hide column b", cont=bgrp, handler = function(...) print("test"))
+      gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues('a', 4))
+      gbutton ("Remake table", cont=bgrp, handler = function(...) {
+        test$destroyGUI()
+        test$makeGUI(tgrp, data.frame(adiff='hello', bdiff=1:10))
+      })
       
       # running the DataTable
       test <- DataTable$new()
-      test$makeGUI(ggroup(cont = win, expand=TRUE), data.frame(a=1:5, b='test', c='wurst'), invisible = c(), changedHandler = function(...) print(test$getSelectedValues()))
+      test$makeGUI(tgrp, data.frame(a=1:5, b='test', c='wurst'), invisible = c(), changedHandler = function(...) print(test$getSelectedValues()))
     }
   )
 )
