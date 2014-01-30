@@ -141,7 +141,7 @@ DataTable <- setRefClass(
     ###### GET DATA ######
     
     #' Get the whole data frame in the table (or parts of it)
-    #' could get the data frame backing the model also via as.data.frame(table$model) but
+    #' could get the data frame backing the model also via as.data.frame(table$model) pr by table$model[,] but
     #' might as well use this one for a little more flexbility
     #' @param rows only supports indices (not rownames, they mean nothing to GTK)
     #' @param columns can be either indices or column names
@@ -150,28 +150,21 @@ DataTable <- setRefClass(
         rows <- seq_len(nrow(table$model)) # return all rows by default
       if (missing(columns)) 
         columns <- seq_len(ncol(table$model)) # return all columns by default
-      if (identical(class(columns), 'character'))
-        columns <- which(colnames(table$model)%in%columns)
-      
-      if (length(columns) > 0) {
-        df <- data.frame(table$model[rows, columns], stringsAsFactors=FALSE)
-        names(df) <- colnames(table$model)[columns]
-        return(df)
-      } else
-        return (NULL) # no columns!
+      return(table$model[rows, columns])
     },
     
     # ' Get Row numbers from values in the specified column
     # 'FIXME: perhaps implement posibility to specifiy as many column conditions as you like
+    # if needing a more specific output, can still use subset(getTableData(), ...) and do it manually
     # maybe: ss <- expression(x == "a")
     #        subset(d, eval(ss))
     getRowsByValues = function(...) {
       filter <- list(...) # currently only supporting the first condition, unfortuantely (FIXME)
-      return(which(getTableData(columns = names(filter)[1])[[1]]%in%filter[[1]]))
+      return(which(getTableData(columns = names(filter)[1])%in%filter[[1]]))
     },
     
     # 'Get the indices of the selected rows
-    # 'returns NULL if nothing is returned
+    # 'returns NULL if nothing is selected
     getSelectedRows = function() {
       selected_rows <- table$selection$getSelectedRows()
       if ( length ( selected_rows$retval ) ) 
@@ -180,6 +173,7 @@ DataTable <- setRefClass(
     },
     
     # 'Get the values of the selected rows
+    # 'This is just a helper function for easier interaction with selected data
     getSelectedValues = function(columns){
       if ( !is.null(rows <- getSelectedRows()))
         return (getTableData(rows, columns))
@@ -190,62 +184,43 @@ DataTable <- setRefClass(
     
     # ' Update data in data frame
     setTableData = function(data) {
-      if (identical(lapply(data, class),lapply(getTableData(), class))) # make sure the data frames are identical in structure
+      if (identical(lapply(data, mode),lapply(getTableData(), mode))) # make sure the data frames are identical in structure
         table$model$setFrame(data)
       else
         stop("Trying to overwrite the data frame in the DatTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
     },
     
-    # ' add rows at a specific position
-    # @param position: index where to add rows
-    addRow = function(data, position = -1) {
-      if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
-        # FIXME: implement that this works smoothly!
-      } else
-        stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+    # ' add row at a specific position
+    # FIXME: implement that it does position properly
+    # ' @param position: index where to add rows (0 = at the end)
+    addRow = function(..., position = 0) {
+      emptyRow <- table$model[0,] # copy structure
+      emptyRow[1,1] <- NA # initialize      
+      table$model$appendRows(emptyRow) # add empty row
+      row <- nrow(table$model) # newly added row
+      editRow(row, ...) # update row with proper data
+      return(row) # return row index of the new row
     },
     
-    # ' edits rows
-    # '@param rows indices of the rows to edit
+    # 'edits row
+    # '@param row index of the row to edit
     # '@param ... -> can be 'data.frame' or 'list' or 'a = 4, b = "test", c = TRUE, ...'
+    #                but must be the correct data type!
     editRow = function(row, ...) {
-      sets <- list(...)
-      # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
-      if (length(sets) == 1 && class(sets[[1]]) == 'data.frame' && is.null(names(sets)[1]))
-        vals <- sets[[1]] # single data frame passed in
-      else if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
-        vals <- data.frame(sets[[1]]) # single list passed in
-      else 
-        vals <- data.frame(sets) # separate variables passed in
+      vals <- list(...)
+      if (length(vals) == 1 && class(vals[[1]]) == 'data.frame' && is.null(names(vals)[1]))
+        vals <- as.list(vals[[1]]) # single data frame passed in
+      else if (length(vals) == 1 && class(vals[[1]]) == 'list' && is.null(names(vals)[1]))
+        vals <- vals[[1]] # single list passed in     
       
-      if (nrow(vals) == 1) {
-        print(row)
-        print(vals)
-        columns <- which(colnames(table$model)%in%names(vals))
-        print(lapply(vals, class))
-        print(lapply(getTableData(row, columns)))
-        if (identical(lapply(vals, class),lapply(getTableData(row, columns), class))) {
-          print("party time")
-        }
-        #FIXME: do it with list(...) 
-        #FIXME: maybe there's trouble with the factors getting the getTableData back in different format??
-        print(table$model[row, columns])
-      } else 
-        stop("Trouble: can't update single row with this data frame: ", vals)
-     
-      
-      # FIXME: test this!
-#       if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
-#         if (length(rows) == nrow(data)) {
-#           df <- getTableData(rows) # get data
-#           df[rows, ] <- data # update data
-#           selected <- getSelectedRows() # save selection
-#           setTableData(df) # set dataÍ
-#           selectRows(selected, blockHandlers = TRUE) # reselect
-#         } else 
-#           stop("Rows to edit (", paste(rows, collapse=", "), ") are not the same number as data provided: ", nrow(data))
-#       } else
-#         stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+      # update table row      
+      for (col in names(vals)) {
+        if (col%in%colnames(table$model)) { # update table field
+          storage.mode(vals[[col]]) <- mode(table$model[,col]) # coerce to correct mode
+          table$model[row, col] <<- vals[[col]]
+        } else 
+          dmsg("WARNING:\n\tTrying to update table column '", col, "' but column does not exist in table (", paste(colnames(table$model), collapse=", "), ")")  
+      }
     },
     
     # 'Remove rows with the provided index
@@ -263,18 +238,20 @@ DataTable <- setRefClass(
     
     ##### SELECT DATA #####
     
+    # Select rows (can select multiple but if the table is in 'single' mode, only one will be possible)
+    # FIXME: implement that it also focus on the right row rather than just selecting it!
     # ' @indices - which indices to select
     # ' @param - blockHandler (whether to block selection handler from triggering)
-    selectRows = function(indices, blockHandler = FALSE) {
+    selectRows = function(rows, blockHandler = FALSE) {
       # block handler if requested
       if (blockHandler)
         gSignalHandlerBlock(table$selection, handlers$changedHandler)
       
       # make selection
       table$selection$unselectAll()
-      if (length(indices) > 0) {
-        for (index in indices)
-          table$selection$selectPath(gtkTreePathNewFromIndices(index-1))
+      if (length(rows) > 0) {
+        for (index in rows)
+          table$selection$selectPath(gtkTreePathNewFromrows(index-1))
       }
       
       # unblock handler
@@ -289,9 +266,10 @@ DataTable <- setRefClass(
     # 'implement it with testthat package syntax and a modal dialog so user needs to click all buttons maybe?
     # 'TODO: figure out first exactly how testthat works
     test = function() {
+      # FIXME: implement more tests for multiple selection data table
       # FIXME: run it as a modal dialog and read back out after user clicked the different buttons what should have happend
       # FIXME: can I make it click the buttons automatically by itself?
-      
+
       options("guiToolkit"="RGtk2")
       win <- ggroup(horizontal = FALSE, cont=gwindow("DataTable test window"), expand=TRUE)
       bgrp <- ggroup(horizontal = TRUE, cont=win)
@@ -302,6 +280,14 @@ DataTable <- setRefClass(
       gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
       gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
       gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues(a = 4))
+      gbutton ("Add new row", cont=bgrp, handler = function(...) {
+        newID <- max(test$getTableData(columns = 'a')) + 1
+        row <- test$addRow(a = newID, b = 'new columns', c = 'hooray')
+        test$selectRows(row)
+      })
+      gbutton ("Edit selected row", cont=bgrp, handler = function(...) {
+        test$editRow(test$getSelectedRows(), b = 'new value', c = 'hooray')
+      })
       gbutton ("Remove row a=2, a=3", cont=bgrp2, handler = function(...) test$removeRows(test$getRowsByValues(a = c(2,3))))
       gbutton ("Remove rows 3 and 5", cont=bgrp2, handler = function(...) test$removeRows(c(3,5)))
       gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst', stringsAsFactors=F)))
@@ -319,4 +305,5 @@ DataTable <- setRefClass(
   )
 )
 
+# run test
 t <- DataTable$new()$test()
