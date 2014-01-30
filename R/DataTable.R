@@ -10,33 +10,74 @@ DataTable <- setRefClass(
   methods = list(
     initialize = function(...) {
       callSuper(...)
+      
+      ### default setting for a data table
+      setSettings(
+        multiSelect = FALSE, # allow multiple selection?
+        resizable = FALSE, # allow column resizing?
+        sortable = FALSE, # allow sorting by clicking on column headers?
+        protect = TRUE
+      )
     },
     
     # 'Makes the gtable. If it already exists in the widgets, will delete the existing one first and then remake it.
     # '@param parent (RGtkWidget) - some container like a ggroup
-    # '@param data (data.frame) - a data frame (will only use the definition, not the whole data)
-    makeGui = function(parent, data, expand = TRUE, invisible = c(), changedHandler = NULL, ...) {
+    # '@param data (data.frame) - a data frame (can be just the definition without any rows but needs to be the correct row types to work!)
+    makeGui = function(parent, data, changedHandler = NULL) {
       
       #INFO: for more information on this kind of data table layout, look at page 166+ of the R Gui guidebook!
       # topics include styling, how to have filters for columns (serachable --> look on page 172+), multiple selections, tooltips, signals, etc.
+      # also, consider reading up more on gtkTreeView for its use as drag and drop source and destination (and potential reordering by drag and drop?)
       
       # store data
-      data$frame <<- data
+      setData(frame = data)
       
+      # gtk objects
       table$model <<- rGtkDataFrame(data) 
-      #test_model <- gtkTreeModelSortNewWithModel(table$model)
       table$view <<- gtkTreeView (table$model)
+      table$selection <<- table$view$getSelection()
+      table$columnMap <<- seq_len(ncol(table$model)) # FIXME: implement proper tracking of what index in the model columns corersponds to what column in the view (so applying visible and such is done appropriately! - this is important even for the basic toggle table)
       
       # styling
       table$view['enable-grid-lines'] <<- TRUE # grid lines between rows
       table$view['rules-hint'] <<- TRUE # nice alternating colors
       table$view['search-column'] <<- FALSE # ctrl-f controlled serach box
-      table$view['reorderable'] <<- TRUE # FIXME: this doesn't actually work properly, not sure why not (there's no drag/drop events really) - should allow vertical drag and drop...
       
-      table$selection <<- table$view$getSelection()
-      table$selection$setMode ("single") # could upgrade this to allow multiple selections!
-      #table$view['rubber-banding'] <- TRUE # also for multiple selections: 
+      ####### INTERNAL DRAG AND DROP ########
+      # reordering rows (by drag and drop)
+      table$view['reorderable'] <<- TRUE 
+      # NOTE/FIXME: this doesn not work because the rGtkDtaFrame model deos not implement the gtkTreeViewDragSource and DragDest interfaces
+      # solution: either reimplement drag and drop manually (find a way to block the underlying handlers implemented in C)
+      # or: switch to using an original tree store (rather than the data.frame based model) although this would probably be slower --> read up in the R GUI book on how to use the iterators for doing this
       
+      # attempt at internal drag and drop - throws error unless disableing the rows drag source and dest (because the default drag and drop handlers still want to fire)
+      #table$view$enableModelDragSource('button1-mask', targetentries, c("default", "copy", "move")) #doesn't work because model doesn't have the interface implement
+      #table$view$enableModelDragDest(targetentries, c("copy", "move", "link")) #if model had it implemented, this would not be necessary in the first place!
+#       targetentries <- list(c("text/plain", "widget", 0))
+#       gtkDragSourceSet(table$view, start.button.mask=c("button1-mask"), targets=targetentries, actions=c("move"))
+#       gtkDragDestSet(table$view, flags="all", targets=targetentries, actions=c("move"))
+#       view.onDragDataGet <- function(widget, context, selection, info, time, userdata) selection$setText("MOVE_ROW")
+#       view.onDragDataReceived <- function (widget, context, x, y, selection, info, time, userdata) { 
+#         if (identical(rawToChar(selection$getText()), "MOVE_ROW")) # passed on as raw
+#           message("Dropping row to new index: ", gtkTreeViewGetDestRowAtPos(table$view, x, y)$path$getIndices()+1)
+#       } 
+#       # gObjectGetSignals(table$view) # doesn't give the underlying drag and drop handlers (implemented in c)
+#       # gSignalConnect(table$view, "drag_drop", function(...) gSignalStopEmission(table$view, "drag_drop")) # doesn't work from R :(
+#       gSignalConnect(table$view, "drag-data-get", view.onDragDataGet, after=TRUE)
+#       gSignalConnect(table$view, "drag-data-received", view.onDragDataReceived, after=TRUE)
+      ###### INTERNAL DRAG AND DROP #######
+      
+      
+      # multi selection
+      if (getSettings('multiSelect')) {
+        table$selection$setMode ("multi") 
+        table$view['rubber-banding'] <<- TRUE 
+      } else
+        table$selection$setMode ("single") 
+      
+      # selection handler
+      if (!is.null(changedHandler))
+        handlers$changedHandler <<- gSignalConnect (table$selection, "changed" , changedHandler)
       
       # add columns
       mapply(table$view$insertColumnWithAttributes,
@@ -44,22 +85,49 @@ DataTable <- setRefClass(
                title = colnames(table$model),
                cell = list(gtkCellRendererText()), text = seq_len(ncol(table$model)) - 1)
       
-      # enable column sorting by clicking on the header
-      # sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setSortColumnId(i - 1))
+      # column resizability
+      sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setResizable(getSettings('resizable')))
       
-      # set visibility
-      mapply(function(col, vis) col$setVisible(vis), table$view$getColumns(), !colnames(table$model)%in%invisible) # NOTE: this is great! don't need to recreate table, with this can make columns visible/invisible as needed
-      
-      # selection handler
-      if (!is.null(changedHandler))
-        handlers$changedHandler <<- gSignalConnect (table$selection, "changed" , changedHandler)
-      
+      # sortability
+      if (getSettings('sortable'))
+        sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setSortColumnId(i - 1))
+     
       # add to parent
       scrolled_window <- gtkScrolledWindow ( ) 
       getToolkitWidget(parent)$add ( scrolled_window ) 
       scrolled_window$add ( table$view )
       scrolled_window$setPolicy ("automatic", "automatic")
       setWidgets(tableGroup = scrolled_window)
+    },
+    
+    # 'Render a column as text (gtkCellRendererText)
+    makeTextColumn = function (columns) {
+      #IMPLEMENT ME
+      # make text column and set resizability and sortability according to the settings
+      # keep track of what data frame column index in the model corresponds to what index in the view columns via updating the columnMap field
+    },
+    
+    # 'Render a column as a checkbox (gtkCellRendererToggle)
+    makeCheckboxColumn = function (...) {
+      
+    },
+    
+    # 'Render a column as a combobox (gtkCellRendererCombo)
+    makeComboColumn = function(...) {
+      # for a good example of all of these, just look at the example editableDataFrame in the RGtk2 examples of the ProgGUIinR package
+    },
+    
+    # change the visibility on certain columns
+    # @param visible - either a single value (TRUE/FALSE) that will be applied to all columns or a vector of same length as columnns
+    changeColumnVisibility = function (columns, visible) {
+      # get columns and current visibility
+      if (identical(class(columns), 'character'))
+        columns <- which(colnames(table$model)%in%columns)
+      visibility <- sapply( seq_len(ncol(table$model)), function(i) table$view$getColumn(i-1)$getVisible())
+      
+      # set visibility
+      visibility[columns] <- visible
+      mapply(function(col, vis) col$setVisible(vis), table$view$getColumns(), visibility) 
     },
     
     addRows = function() {
@@ -132,9 +200,8 @@ DataTable <- setRefClass(
       selectRows(indices, blockHandler = blockHandler)
     },
     
-    # FIXME: implement destroy Gui properly in base classes
     destroyGui = function() {
-      if (!is.null(widgets$tableGroup))
+      if (!is.null(widgets$tableGroup) && !identical(class(widgets$tableGroup), "<invalid>")) 
         gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
       callSuper()
     },
@@ -151,18 +218,20 @@ DataTable <- setRefClass(
       tgrp <- ggroup(cont = win, expand=TRUE)
       
       # test implementations
-      gbutton ("Hide column b", cont=bgrp, handler = function(...) print("test"))
+      gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
+      gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
       gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues('a', 4))
-      gbutton ("Remake table", cont=bgrp, handler = function(...) {
+      gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp, handler = function(...) {
         test$destroyGui()
-        test$makeGui(tgrp, data.frame(adiff='hello', bdiff=1:10))
+        test$setSettings(sortable = TRUE, resizable = TRUE, overwriteProtected = TRUE)
+        test$makeGui(tgrp, data.frame(adiff=letters[10:1], bdiff=1:10))
       })
       
       # running the DataTable
       test <- DataTable$new()
-      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst'), invisible = c(), changedHandler = function(...) print(test$getSelectedValues()))
+      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst'), changedHandler = function(...) print(test$getSelectedValues()))
     }
   )
 )
 
-#DataTable$new()$test()
+DataTable$new()$test()
