@@ -11,6 +11,8 @@ DataTable <- setRefClass(
     initialize = function(...) {
       callSuper(...)
       
+      # FIXME: maybe define what the id columns are maybe in the table settings after all... (also order id maybe?)
+      
       ### default setting for a data table
       setSettings(
         multiSelect = FALSE, # allow multiple selection?
@@ -136,8 +138,30 @@ DataTable <- setRefClass(
     },
     
     removeRows = function(rows) {
-      # implement me - can only be done by replacing the data frame underlying the model!
-      #table$model$setFrame(data.frame minus the rows)
+      if (length(rows) > 0) {
+        if ( length(selected <- setdiff(getSelectedRows(), rows)) > 0 ) # rows that will not get deleted and should remain selected
+          for (i in seq_len(selected)) 
+            selected[i] <- selected[i] - length(which(rows<selected[i])) # shift depending on how many rows before the selected were removed
+        
+        print(selected)
+        # remove rows
+        table$model$setFrame(getTableData()[-rows,])
+        
+        #FIXME, this is not quite working yet!!
+        
+        # update selection
+        selectRows(selected)
+      }
+    },
+    
+    removeRowsByValues = function(column, values) {
+      removeRows(which(getTableData(columns = column)[[1]]%in%values))
+    },
+    
+    # ' Set the entire data frame new
+    setTableData = function(data) {
+      #FIXME: implement check that the data frame has the same dimensions as expected!
+      table$model$setFrame(data)
     },
     
     #' Get the whole data frame in the table (or parts of it)
@@ -215,13 +239,17 @@ DataTable <- setRefClass(
       options("guiToolkit"="RGtk2")
       win <- ggroup(horizontal = FALSE, cont=gwindow("DataTable test window"), expand=TRUE)
       bgrp <- ggroup(horizontal = TRUE, cont=win)
+      bgrp2 <- ggroup(horizontal = TRUE, cont=win)
       tgrp <- ggroup(cont = win, expand=TRUE)
       
       # test implementations
       gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
       gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
       gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues('a', 4))
-      gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp, handler = function(...) {
+      gbutton ("Remove row a=2", cont=bgrp2, handler = function(...) test$removeRowsByValues('a', 2))
+      gbutton ("Remove rows 3 and 5", cont=bgrp2, handler = function(...) test$removeRows(c(3,5)))
+      gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst')))
+      gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp2, handler = function(...) {
         test$destroyGui()
         test$setSettings(sortable = TRUE, resizable = TRUE, overwriteProtected = TRUE)
         test$makeGui(tgrp, data.frame(adiff=letters[10:1], bdiff=1:10))
