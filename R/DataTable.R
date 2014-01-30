@@ -119,6 +119,12 @@ DataTable <- setRefClass(
       # for a good example of all of these, just look at the example editableDataFrame in the RGtk2 examples of the ProgGUIinR package
     },
     
+    destroyGui = function() {
+      if (!is.null(widgets$tableGroup) && !identical(class(widgets$tableGroup), "<invalid>")) 
+        gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
+      callSuper()
+    },
+    
     # change the visibility on certain columns
     # @param visible - either a single value (TRUE/FALSE) that will be applied to all columns or a vector of same length as columnns
     changeColumnVisibility = function (columns, visible) {
@@ -131,38 +137,8 @@ DataTable <- setRefClass(
       visibility[columns] <- visible
       mapply(function(col, vis) col$setVisible(vis), table$view$getColumns(), visibility) 
     },
-    
-    addRows = function() {
-      #implement me
-      #table$model$appendRows()
-    },
-    
-    removeRows = function(rows) {
-      if (length(rows) > 0) {
-        if ( length(selected <- setdiff(getSelectedRows(), rows)) > 0 ) # rows that will not get deleted and should remain selected
-          for (i in seq_len(selected)) 
-            selected[i] <- selected[i] - length(which(rows<selected[i])) # shift depending on how many rows before the selected were removed
         
-        print(selected)
-        # remove rows
-        table$model$setFrame(getTableData()[-rows,])
-        
-        #FIXME, this is not quite working yet!!
-        
-        # update selection
-        selectRows(selected)
-      }
-    },
-    
-    removeRowsByValues = function(column, values) {
-      removeRows(which(getTableData(columns = column)[[1]]%in%values))
-    },
-    
-    # ' Set the entire data frame new
-    setTableData = function(data) {
-      #FIXME: implement check that the data frame has the same dimensions as expected!
-      table$model$setFrame(data)
-    },
+    ###### GET DATA ######
     
     #' Get the whole data frame in the table (or parts of it)
     #' could get the data frame backing the model also via as.data.frame(table$model) but
@@ -185,7 +161,17 @@ DataTable <- setRefClass(
         return (NULL) # no columns!
     },
     
+    # ' Get Row numbers from values in the specified column
+    # 'FIXME: perhaps implement posibility to specifiy as many column conditions as you like
+    # maybe: ss <- expression(x == "a")
+    #        subset(d, eval(ss))
+    getRowsByValues = function(...) {
+      filter <- list(...) # currently only supporting the first condition, unfortuantely (FIXME)
+      return(which(getTableData(columns = names(filter)[1])[[1]]%in%filter[[1]]))
+    },
+    
     # 'Get the indices of the selected rows
+    # 'returns NULL if nothing is returned
     getSelectedRows = function() {
       selected_rows <- table$selection$getSelectedRows()
       if ( length ( selected_rows$retval ) ) 
@@ -199,6 +185,62 @@ DataTable <- setRefClass(
         return (getTableData(rows, columns))
       return (NULL)
     },
+    
+    #### SET DATA ####
+    
+    # ' Update data in data frame
+    setTableData = function(data) {
+      if (identical(lapply(data, class),lapply(getTableData(), class))) # make sure the data frames are identical in structure
+        table$model$setFrame(data)
+      else
+        stop("Trying to overwrite the data frame in the DatTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+    },
+    
+    # ' add rows at a specific position
+    # @param position: index where to add rows
+    addRows = function(data, position = -1) {
+      if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
+        # FIXME: implement that this works smoothly!
+      } else
+        stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+    },
+    
+    # ' edits rows
+    # '@param rows indices of the rows to edit
+    # '@param data (must be the same nrow as rows)
+    editRows = function(rows, data) {
+      # FIXME: test this!
+      if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
+        if (length(rows) == nrow(data)) {
+          df <- getTableData(rows) # get data
+          df[rows, ] <- data # update data
+          selected <- getSelectedRows() # save selection
+          setTableData(df) # set data
+          selectRows(selected, blockHandlers = TRUE) # reselect
+        } else 
+          stop("Rows to edit (", paste(rows, collapse=", "), ") are not the same number as data provided: ", nrow(data))
+      } else
+        stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+    },
+    
+    # 'Remove rows with the provided index
+    removeRows = function(rows) {
+      if (length(rows) > 0) {
+        if ( length(selected <- setdiff(getSelectedRows(), rows)) > 0 ) # rows that will not get deleted and should remain selected
+          selected <- sapply(selected, function(i) i - sum(rows < i)) # adjust index
+        
+        selectRows(NULL, blockHandler = TRUE) # deselect all 
+        table$model$setFrame(getTableData()[-rows,]) # remove rows
+        selectRows(selected, blockHandler = TRUE) # reselect what still exists
+      }
+    },
+    
+    # 'Remove rows by values of a column
+    removeRowsByValues = function(...) {
+      removeRows(getRowsByValues(...))
+    },
+    
+    ##### SELECT DATA #####
     
     # ' @indices - which indices to select
     # ' @param - blockHandler (whether to block selection handler from triggering)
@@ -219,15 +261,8 @@ DataTable <- setRefClass(
         gSignalHandlerUnblock(table$selection, handlers$changedHandler)
     },
 
-    selectRowsByValues = function(column, values, blockHandler = FALSE) {
-      indices <- which(getTableData(columns = column)[[1]]%in%values)
-      selectRows(indices, blockHandler = blockHandler)
-    },
-    
-    destroyGui = function() {
-      if (!is.null(widgets$tableGroup) && !identical(class(widgets$tableGroup), "<invalid>")) 
-        gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
-      callSuper()
+    selectRowsByValues = function(..., blockHandler = FALSE) {
+      selectRows(getRowsByValues(...), blockHandler = blockHandler)
     },
     
     # 'implement it with testthat package syntax and a modal dialog so user needs to click all buttons maybe?
@@ -245,8 +280,8 @@ DataTable <- setRefClass(
       # test implementations
       gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
       gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
-      gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues('a', 4))
-      gbutton ("Remove row a=2", cont=bgrp2, handler = function(...) test$removeRowsByValues('a', 2))
+      gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues(a = 4))
+      gbutton ("Remove row a=2, a=3", cont=bgrp2, handler = function(...) test$removeRowsByValues(a = c(2,3)))
       gbutton ("Remove rows 3 and 5", cont=bgrp2, handler = function(...) test$removeRows(c(3,5)))
       gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst')))
       gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp2, handler = function(...) {
