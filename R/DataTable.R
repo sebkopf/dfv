@@ -198,7 +198,7 @@ DataTable <- setRefClass(
     
     # ' add rows at a specific position
     # @param position: index where to add rows
-    addRows = function(data, position = -1) {
+    addRow = function(data, position = -1) {
       if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
         # FIXME: implement that this works smoothly!
       } else
@@ -207,23 +207,49 @@ DataTable <- setRefClass(
     
     # ' edits rows
     # '@param rows indices of the rows to edit
-    # '@param data (must be the same nrow as rows)
-    editRows = function(rows, data) {
+    # '@param ... -> can be 'data.frame' or 'list' or 'a = 4, b = "test", c = TRUE, ...'
+    editRow = function(row, ...) {
+      sets <- list(...)
+      # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
+      if (length(sets) == 1 && class(sets[[1]]) == 'data.frame' && is.null(names(sets)[1]))
+        vals <- sets[[1]] # single data frame passed in
+      else if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
+        vals <- data.frame(sets[[1]]) # single list passed in
+      else 
+        vals <- data.frame(sets) # separate variables passed in
+      
+      if (nrow(vals) == 1) {
+        print(row)
+        print(vals)
+        columns <- which(colnames(table$model)%in%names(vals))
+        print(lapply(vals, class))
+        print(lapply(getTableData(row, columns)))
+        if (identical(lapply(vals, class),lapply(getTableData(row, columns), class))) {
+          print("party time")
+        }
+        #FIXME: do it with list(...) 
+        #FIXME: maybe there's trouble with the factors getting the getTableData back in different format??
+        print(table$model[row, columns])
+      } else 
+        stop("Trouble: can't update single row with this data frame: ", vals)
+     
+      
       # FIXME: test this!
-      if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
-        if (length(rows) == nrow(data)) {
-          df <- getTableData(rows) # get data
-          df[rows, ] <- data # update data
-          selected <- getSelectedRows() # save selection
-          setTableData(df) # set data
-          selectRows(selected, blockHandlers = TRUE) # reselect
-        } else 
-          stop("Rows to edit (", paste(rows, collapse=", "), ") are not the same number as data provided: ", nrow(data))
-      } else
-        stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
+#       if (identical(lapply(data, class),lapply(getTableData(), class))) { # make sure the data frames are identical in structure
+#         if (length(rows) == nrow(data)) {
+#           df <- getTableData(rows) # get data
+#           df[rows, ] <- data # update data
+#           selected <- getSelectedRows() # save selection
+#           setTableData(df) # set dataÍ
+#           selectRows(selected, blockHandlers = TRUE) # reselect
+#         } else 
+#           stop("Rows to edit (", paste(rows, collapse=", "), ") are not the same number as data provided: ", nrow(data))
+#       } else
+#         stop("Trying to edit the data frame in the DataTable with a data frame that has different struture from the original design. If this is really what is intended, you must first destroyGui() and then make it new with makeGui()")
     },
     
     # 'Remove rows with the provided index
+    # 'Combine this with getRowsByValues(...) to find the right indices
     removeRows = function(rows) {
       if (length(rows) > 0) {
         if ( length(selected <- setdiff(getSelectedRows(), rows)) > 0 ) # rows that will not get deleted and should remain selected
@@ -233,11 +259,6 @@ DataTable <- setRefClass(
         table$model$setFrame(getTableData()[-rows,]) # remove rows
         selectRows(selected, blockHandler = TRUE) # reselect what still exists
       }
-    },
-    
-    # 'Remove rows by values of a column
-    removeRowsByValues = function(...) {
-      removeRows(getRowsByValues(...))
     },
     
     ##### SELECT DATA #####
@@ -281,9 +302,9 @@ DataTable <- setRefClass(
       gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
       gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
       gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues(a = 4))
-      gbutton ("Remove row a=2, a=3", cont=bgrp2, handler = function(...) test$removeRowsByValues(a = c(2,3)))
+      gbutton ("Remove row a=2, a=3", cont=bgrp2, handler = function(...) test$removeRows(test$getRowsByValues(a = c(2,3))))
       gbutton ("Remove rows 3 and 5", cont=bgrp2, handler = function(...) test$removeRows(c(3,5)))
-      gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst')))
+      gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst', stringsAsFactors=F)))
       gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp2, handler = function(...) {
         test$destroyGui()
         test$setSettings(sortable = TRUE, resizable = TRUE, overwriteProtected = TRUE)
@@ -292,9 +313,10 @@ DataTable <- setRefClass(
       
       # running the DataTable
       test <- DataTable$new()
-      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst'), changedHandler = function(...) print(test$getSelectedValues()))
+      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst', stringsAsFactors=F), changedHandler = function(...) print(test$getSelectedValues()))
+      return (test)
     }
   )
 )
 
-DataTable$new()$test()
+t <- DataTable$new()$test()
