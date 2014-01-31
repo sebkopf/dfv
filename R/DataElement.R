@@ -51,6 +51,9 @@ DataElement <- setRefClass(
     # '@param protectSettings (if TRUE, will protect all the settings newly set)
     setSettings = function(..., overwriteProtected = FALSE, protect = FALSE) {
       sets <- list(...)
+      
+      # FIXME: implement this properly with using nargs() == 3 to check if there is only one variable passed in! can then access it via ..1
+      
       # If there is only one variable passed and that is an unnamed list, take that list directly to modify the settings
       if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
         sets <- sets[[1]]

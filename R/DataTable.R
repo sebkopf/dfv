@@ -30,7 +30,7 @@ DataTable <- setRefClass(
     # 'Makes the gtable. If it already exists in the widgets, will delete the existing one first and then remake it.
     # '@param parent (RGtkWidget) - some container like a ggroup
     # '@param data (data.frame) - a data frame (can be just the definition without any rows but needs to be the correct row types to work!)
-    makeGui = function(parent, data, changedHandler = NULL) {
+    makeGui = function(parent, data, editableColumns = c(), changedHandler = NULL) {
       
       #INFO: for more information on this kind of data table layout, look at page 166+ of the R Gui guidebook!
       # topics include styling, how to have filters for columns (serachable --> look on page 172+), multiple selections, tooltips, signals, etc.
@@ -86,10 +86,8 @@ DataTable <- setRefClass(
         handlers$changedHandler <<- gSignalConnect (table$selection, "changed" , changedHandler)
       
       # add columns
-      mapply(table$view$insertColumnWithAttributes,
-               position = -1,
-               title = colnames(table$model),
-               cell = list(gtkCellRendererText()), text = seq_len(ncol(table$model)) - 1)
+      #cell_renderer['background'] <- 'gray80' # can style columns if want to
+      mapply(.self$makeColumn, index = 1:ncol(data), editable = names(data) %in% editableColumns, type = sapply(data, class))
       
       # column resizability
       sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setResizable(getSettings('resizable')))
@@ -106,23 +104,72 @@ DataTable <- setRefClass(
       setWidgets(tableGroup = scrolled_window)
     },
     
-    # 'Render a column as text (gtkCellRendererText)
-    makeTextColumn = function (columns) {
-      #IMPLEMENT ME
-      # make text column and set resizability and sortability according to the settings
-      # keep track of what data frame column index in the model corresponds to what index in the view columns via updating the columnMap field
-    },
-    
-    # 'Render a column as a checkbox (gtkCellRendererToggle)
-    makeCheckboxColumn = function (...) {
+    # ' make a view column in the table for the column with index in the data frame used in the model
+    # ' for editable cells, the standard cell change handler in this class is called (feel free to overwrite)
+    makeColumn = function(index, name = colnames(table$model)[index], editable = FALSE, type = c("numeric", "integer", "character", "logical", "factor", "icon")) {
+      type = match.arg(type)
       
+      ## define cell renderer
+      if (editable)
+        cr <- switch(type,
+                     "logical" = gtkCellRendererToggle(),
+                     "factor" = gtkCellRendererCombo(),
+                     gtkCellRendererText())
+      else
+        cr <- gtkCellRendererText()
+      
+      # initialize column
+      vc <- gtkTreeViewColumnNewWithAttributes(name, cr)
+      table$view$InsertColumn(vc, -1)  # always add column at the end of treeView (-1) but could also specify here
+      
+      # link back to model (which is 0 index based) 
+      if (editable && type == "logical") vc$addAttribute(cr, "active", index - 1) 
+      else vc$addAttribute(cr, "text", index - 1)
+      
+      # styling
+      if (type == "numeric") cr['xalign'] <- 1
+      
+      # editability
+      if (editable) {
+        # enable editability
+        if (type == "logical") cr["activatable"] <- TRUE
+        else cr["editable"] <- TRUE
+        
+        # combo box needs its own data store for editing
+        if(type == "factor") { 
+          cstore <- gtkListStore("gchararray")
+          rGtkstore <- table$view$getModel()
+          vals <- rGtkstore[, index, drop=TRUE]
+          for(i in as.character(unique(vals))) {
+            iter <- cstore$append()
+            cstore$setValue(iter$iter,column=0, i)
+          }
+          cr['model'] <- cstore
+          cr['text-column'] <- 0        
+        }
+        
+        # connect callback
+        gSignalConnect(cr, signal = if(type != "logical") "edited" else "toggled",
+                             f = .self$columnChanged, 
+                             data = list(column = colnames(table$model)[index]))
+      }
     },
     
-    # 'Render a column as a combobox (gtkCellRendererCombo)
-    makeComboColumn = function(...) {
-      # for a good example of all of these, just look at the example editableDataFrame in the RGtk2 examples of the ProgGUIinR package
+    # ' default column data changed handler (for editable columns)
+    # ' overwrite if need be
+    columnChanged = function(cell, path, newValue, ...) {
+      if(nargs() == 3) {
+        userData <- newValue 
+        newValue <- NA # no newValue (toggle)
+      } else 
+        userData <- ..1
+      l <- list()
+      l[userData$column] <- newValue
+      editRow(as.numeric(path) + 1, l)
+      return(FALSE)
     },
-    
+
+    # ' destroy the GUI (finalize the tableGroup toplevel group)
     destroyGui = function() {
       if (!is.null(widgets$tableGroup) && !identical(class(widgets$tableGroup), "<invalid>")) 
         gtkWidgetDestroy(widgets$tableGroup) # make sure the table is properly finalized
@@ -209,19 +256,41 @@ DataTable <- setRefClass(
     # 'edits row
     # '@param row index of the row to edit
     # '@param ... -> can be 'data.frame' or 'list' or 'a = 4, b = "test", c = TRUE, ...'
-    #                but must be the correct data type!
+    #                but must be the correct data type! (will try to coerce)
+    # '@return - update succesful
     editRow = function(row, ...) {
       vals <- list(...)
-      if (length(vals) == 1 && class(vals[[1]]) == 'data.frame' && is.null(names(vals)[1]))
-        vals <- as.list(vals[[1]]) # single data frame passed in
-      else if (length(vals) == 1 && class(vals[[1]]) == 'list' && is.null(names(vals)[1]))
-        vals <- vals[[1]] # single list passed in     
+      if (nargs() == 2)
+        if (class(..1) == 'data.frame')
+          vals <- as.list(..1) # single data frame passed in
+        else if (class(..1) == 'list')
+          vals <- ..1 # single list passed in     
       
-      # update table row      
+      # update table row     
       for (col in names(vals)) {
         if (col%in%colnames(table$model)) { # update table field
-          storage.mode(vals[[col]]) <- mode(table$model[,col]) # coerce to correct mode
-          table$model[row, col] <<- vals[[col]]
+         # cast to correct type
+          newValue <- try(switch(class(table$model[,col]),
+                   "integer" = as.integer(as.numeric(vals[[col]])),
+                   "character" = as.character(vals[[col]]),
+                   "numeric" = as.numeric(vals[[col]]),
+                   "factor"  = as.character(vals[[col]]),
+                   "logical" =  !as.logical(table$model[row,col])),
+                silent=TRUE)
+          
+          # check if something went wrong
+          if(inherits(newValue,"try-error")) 
+            sprintf("Failed to coerce new value to type %s",userData$type)
+
+          # check if there's trouble with a factor
+          if(class(table$model[,col]) == "factor") {
+            curLevels <- levels(table$model[,col])
+            if(! newValue %in% curLevels) 
+              message("Can't add level to a factor.")
+          }
+          
+          # assign new value
+          table$model[row, col] <<- newValue
         } else 
           dmsg("WARNING:\n\tTrying to update table column '", col, "' but column does not exist in table (", paste(colnames(table$model), collapse=", "), ")")  
       }
@@ -255,7 +324,7 @@ DataTable <- setRefClass(
       table$selection$unselectAll()
       if (length(rows) > 0) {
         for (index in rows)
-          table$selection$selectPath(gtkTreePathNewFromrows(index-1))
+          table$selection$selectPath(gtkTreePathNewFromIndices(index-1))
       }
       
       # unblock handler
@@ -281,29 +350,40 @@ DataTable <- setRefClass(
       tgrp <- ggroup(cont = win, expand=TRUE)
       
       # test implementations
-      gbutton ("Hide column a and c", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'c'), FALSE))
-      gbutton ("Show column a and c again and hide b", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('a', 'b', 'c'), c(TRUE, FALSE, TRUE)))
-      gbutton ("Select row a=4", cont=bgrp, handler = function(...) test$selectRowsByValues(a = 4))
+      gbutton ("Select row ID=2", cont=bgrp, handler = function(...) test$selectRowsByValues(ID = 2))
+      gbutton ("Hide column logical and factor", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('logical', 'factor'), FALSE))
+      gbutton ("Show column logical and factor again and hide ID", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('ID', 'logical', 'factor'), c(FALSE, TRUE, TRUE)))
+      
       gbutton ("Add new row", cont=bgrp, handler = function(...) {
-        newID <- max(test$getTableData(columns = 'a')) + 1
-        row <- test$addRow(a = newID, b = 'new columns', c = 'hooray')
+        newID <- max(test$getTableData(columns = 'ID')) + 1
+        row <- test$addRow(ID = newID, character = "new row", numeric = rnorm(1), factor="orange")
         test$selectRows(row)
       })
       gbutton ("Edit selected row", cont=bgrp, handler = function(...) {
-        test$editRow(test$getSelectedRows(), b = 'new value', c = 'hooray')
+        test$editRow(test$getSelectedRows(), character = 'new value', numeric = rnorm(1))
       })
-      gbutton ("Remove row a=2, a=3", cont=bgrp2, handler = function(...) test$removeRows(test$getRowsByValues(a = c(2,3))))
-      gbutton ("Remove rows 3 and 5", cont=bgrp2, handler = function(...) test$removeRows(c(3,5)))
-      gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(data.frame(a=1:20, b='test', c='wurst', stringsAsFactors=F)))
-      gbutton ("Remake table\n(with sortable/resizable cols)", cont=bgrp2, handler = function(...) {
+      gbutton ("Remove row ID=2, ID=3", cont=bgrp2, handler = function(...) test$removeRows(test$getRowsByValues(ID = c(2,3))))
+      gbutton ("Remove rows 1 and 3", cont=bgrp2, handler = function(...) test$removeRows(c(1,3)))
+      gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(DF))
+      gbutton ("Remake table\n(with sortable/resizable cols) and editable columns", cont=bgrp2, handler = function(...) {
         test$destroyGui()
         test$setSettings(sortable = TRUE, resizable = TRUE, overwriteProtected = TRUE)
-        test$makeGui(tgrp, data.frame(adiff=letters[10:1], bdiff=1:10))
+        test$makeGui(tgrp, DF, editableColumns = c("integer", "character", "logical", "factor", "numeric"))
       })
       
       # running the DataTable
       test <- DataTable$new()
-      test$makeGui(tgrp, data.frame(a=1:5, b='test', c='wurst', stringsAsFactors=F), changedHandler = function(...) print(test$getSelectedValues()))
+      
+      DF = data.frame(
+        ID = 1:3,
+        logical = c(TRUE, TRUE, FALSE),
+        character = c("one","two","three"),
+        factor = factor(c("banana", "apple", "orange")),
+        integer = sample(3),
+        numeric = rnorm(3),
+        stringsAsFactors=FALSE)
+      
+      test$makeGui(tgrp, DF, changedHandler = function(...) print(data.frame(test$getSelectedValues())))
       return (test)
     }
   )
