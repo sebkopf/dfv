@@ -1,4 +1,9 @@
 #' Class implementing a data table as a GuiElement
+#' Usage:
+#' Define settings after initializing the class
+#' Load data frame when makingGui 
+#'  - the entire data frame will be displayed in the table but you can adjust the visibility afterwards to hide unwanted columns (or adjust the data frame before hand)
+#'  - changing the order of the columns is not currently supported by the underlying model, instead just have the data frame in the right order when you pass it in
 DataTable <- setRefClass(
   'DataTable',
   contains = 'GuiElement', 
@@ -38,7 +43,6 @@ DataTable <- setRefClass(
       table$model <<- rGtkDataFrame(data) 
       table$view <<- gtkTreeView (table$model)
       table$selection <<- table$view$getSelection()
-      table$columnMap <<- seq_len(ncol(table$model)) # FIXME: implement proper tracking of what index in the model columns corersponds to what column in the view (so applying visible and such is done appropriately! - this is important even for the basic toggle table)
       
       # styling
       table$view['enable-grid-lines'] <<- TRUE # grid lines between rows
