@@ -108,10 +108,6 @@ DataTable <- setRefClass(
       setWidgets(tableGroup = scrolled_window)
       
       # adjust visibility
-      print("INVISLB:E")
-      print(settings$invisibleColumns)
-      print(settings)
-      
       changeColumnVisibility(settings$invisibleColumns, FALSE) 
     },
     

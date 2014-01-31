@@ -16,25 +16,18 @@ setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
   detailsGrp[(i<-i+1), 1] <- "Saved formats:"
   detailsGrp[i, 2:3, expand=TRUE] <- (tableGrp <- ggroup(cont = detailsGrp, expand = TRUE))
   
-  #setWidgets(gui, module, optionsTable = gtable(data.frame(Dimensions=character(0), stringsAsFactors=FALSE), expand=TRUE, cont=detailsGrp))
-  getElements(gui, module, 'optionsTable')$makeGui(tableGrp)
+  # options table
+  getElements(gui, module, 'optionsTable')$makeGui(tableGrp, changedHandler = function(...) {
+    # get values of width and height in table and load the same name 'width' and 'height' text widgets with it
+    getModule(gui, module)$loadWidgets(
+      as.list(getElements(gui, module, 'optionsTable')$getSelectedValues(c('width', 'height'))) 
+    )
+  })
   
   detailsGrp[(i<-i+1), 1] <- "Height [inches]:"
   detailsGrp[i, 2] <- setWidgets(gui, module, height = gedit("", cont=detailsGrp, coerce.with=as.numeric))
   detailsGrp[(i<-i+1), 1] <- "Width [inches]:"
   detailsGrp[i, 2] <- setWidgets(gui, module, width = gedit("", cont=detailsGrp, coerce.with=as.numeric))
-  
-  # handler for table (load the widht and height settings)
-#   addHandlerClicked(getWidgets(gui, module, 'optionsTable'), 
-#       handler = function(h, ...) {
-#         index <- which(getData(gui, module, 'options')$Dimensions == svalue(h$obj))
-#         if (length(index) > 0) { # make sure its not an empty index
-#           getModule(gui, module)$loadWidgets(
-#             width = getData(gui, module, 'options')[index,'width'],
-#             height = getData(gui, module, 'options')[index,'height'])
-#         }
-#       })
-  
   
   # directory selection
   fileBrowser.items <- function(path = NULL, user.data=NULL) {
@@ -92,7 +85,8 @@ SavePlotDialog <- setRefClass(
         protect = TRUE
       )
       
-      setSettings(tbPane = 0.4) # new option (can be overwritten)
+      # new option (not protected, can be overwritten by user preference)
+      setSettings(tbPane = 0.4) 
       
       # data
       setData(
@@ -100,22 +94,20 @@ SavePlotDialog <- setRefClass(
         plotsPathIndex = integer(0),
         filename = "",
         extension = ".pdf",
-        options = data.frame( # all the options for formats
-          width = c(4, 8, 16),
-          height = c(4, 6, 12),
-          stringsAsFactors = FALSE),
         width = 8,
         height = 6
       )
     },
     
+    # ' make DataTable Element
     makeGui = function() {
       options <- DataTable$new()
       options$setData(
-        frame = mutate(data.frame( # all the options for formats
+        frame = data.frame( # all the options for formats
           width = c(4, 8, 16),
           height = c(4, 6, 12),
-          stringsAsFactors = FALSE), Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)")),
+          Dimensions = '', 
+          stringsAsFactors = FALSE),
         selectedRows = 2
       )
       options$setSettings(invisibleColumns = c('height', 'width'))
@@ -124,19 +116,24 @@ SavePlotDialog <- setRefClass(
     },
     
     loadGui = function() {
+      # update dimensions column
+      getElements('optionsTable')$setData(frame = 
+        mutate(getElements('optionsTable')$getData('frame'), Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)")))
       callSuper()
-      
-      # set formats table
-      #data$options <<- mutate(data$options, Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)"))
-      #data$options <<- unique(data$options) # only use each format once
-      #loadWidgets(optionsTable = data$options["Dimensions"])
-      #svalue(widgets$optionsTable, index=FALSE) <<- subset(data$options, width == data$width & height == data$height)$Dimensions
     }, 
     
     saveGui = function() {
       callSuper()
       # save width and height in options
-      #data$options <<- rbind(data$options, data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))# add used widht and height to settings
+      if (nrow(subset(getElements('optionsTable')$getData('frame'), width == data$width & height == data$height)) == 0) {
+        dmsg(class(.self), ": adding new widht x height option to table")
+        getElements('optionsTable')$setData(
+          selectedRows = nrow(getElements('optionsTable')$getData('frame')) + 1,
+          frame = rbind(
+            getElements('optionsTable')$getData('frame'),
+            data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))
+          )
+      }
     }
   )
 )

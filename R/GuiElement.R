@@ -146,10 +146,14 @@ GuiElement <- setRefClass(
     },
     
     # 'Load widgets data (widgetids provided without a key are autloaded from data with the same name)
-    # '@code: widgetid = value, widgetid2 = value, 'widgetid3',  ...  
+    # '@param ... : options
+    #     - widgetid = value, widgetid2 = value, 'widgetid3',  ...  
+    #     - list(widgetid = value, widgetid2 = value, 'widgetid3;)
     loadWidgets = function(...) {
-      # FIXME: allow both ... and list(a=b) to be passed in! (see setWigets for a fix)
       fields <- list(...)
+      if (length(fields) == 1 && class(fields[[1]]) == 'list' && is.null(names(fields)[1])) 
+        fields <- fields[[1]]
+      
       for (i in 1:length(fields)) {
         if (is.null(names(fields)[i]) || names(fields)[i] == '')
           loadWidget(fields[[i]]) # load widget from corresponding data field
