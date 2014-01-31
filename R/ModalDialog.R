@@ -53,7 +53,6 @@ ModalDialog <- setRefClass(
         cancel.icon = "gtk-cancel",
         cancel.label = "Cancel",
         cancel.tooltip = "Cancel",
-        overwriteProtected = TRUE,
         protect = TRUE
       )
     }, 

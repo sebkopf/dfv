@@ -48,8 +48,9 @@ DataElement <- setRefClass(
     # 'or pass in just a single list
     # 'Code: setSettings(list(a=5, b='test', ...))
     # '@param overwriteProtected (whether to overwrite protected settings or not)
+    #       by default this is TRUE, only auto-load does NOT overwrite protected settings
     # '@param protectSettings (if TRUE, will protect all the settings newly set)
-    setSettings = function(..., overwriteProtected = FALSE, protect = FALSE) {
+    setSettings = function(..., overwriteProtected = TRUE, protect = FALSE) {
       sets <- list(...)
       
       # FIXME: implement this properly with using nargs() == 3 to check if there is only one variable passed in! can then access it via ..1
@@ -58,11 +59,11 @@ DataElement <- setRefClass(
       if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1]))
         sets <- sets[[1]]
       
-      # check for protected
-      if (overwriteProtected == FALSE && length(protected) > 0 && length(skip <- intersect(names(sets), protected)) > 0) {
-        dmsg("For class ", class(.self), " instance, NOT overwriting protected settings: ", paste(skip, collapse=", "))
-        sets <- sets[names(sets)[which(!names(sets)%in%skip)]] # exclude protected settings
-      }
+      # protected settings
+      if (overwriteProtected == TRUE && length(protected) > 0 && length(owrite <- intersect(names(sets), protected)) > 0) 
+        dmsg("For class ", class(.self), " instance, overwriting protected settings: ", paste(owrite, collapse=", "))
+      else if (overwriteProtected == FALSE)
+        sets <- sets[setdiff(names(sets), protected)] # exclude protected settings
       
       # update settings
       settings <<- modifyList(settings, sets)
@@ -72,14 +73,16 @@ DataElement <- setRefClass(
         protectSettings(ids)
     },
     
-    # 'Protected settings are never overwritten by the setSettings method (e.g. by an autosave or such) unless it's specified (overwriteProtected = TRUE)
+    # 'Protected settings are never overwritten by an autosave
     # 'This is very useful for defining unchangable settings and should be used for all settings that are NOT user adjustable.
     # '@ids - ids of the settings to protected, if missing, all currently defined settings get protected
     protectSettings = function(ids) {
       if (missing(ids))
         ids <- names(settings)
-      dmsg("For class ", class(.self), " instance, protecting the following settings: ", paste(ids, collapse=", "))
-      protected <<- c(protected, ids)
+      if ( length(pro <- setdiff(ids, protected)) > 0 ) { # which ones are newly protected?
+        dmsg("For class ", class(.self), " instance, protecting the following settings: ", paste(pro, collapse=", "))
+        protected <<- c(protected, pro)
+      }
     },
     
     getData = function(ids) {

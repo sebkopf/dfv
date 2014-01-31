@@ -14,22 +14,26 @@ setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
   detailsGrp[i, 2] <- setWidgets(gui, module, filename = gedit("", cont=detailsGrp))
   detailsGrp[i, 3] <- setWidgets(gui, module, extension = glabel("", cont=detailsGrp))
   detailsGrp[(i<-i+1), 1] <- "Saved formats:"
-  detailsGrp[i, 2:3, expand=TRUE] <- setWidgets(gui, module, optionsTable = gtable(data.frame(Dimensions=character(0), stringsAsFactors=FALSE), expand=TRUE, cont=detailsGrp))
+  detailsGrp[i, 2:3, expand=TRUE] <- (tableGrp <- ggroup(cont = detailsGrp, expand = TRUE))
+  
+  #setWidgets(gui, module, optionsTable = gtable(data.frame(Dimensions=character(0), stringsAsFactors=FALSE), expand=TRUE, cont=detailsGrp))
+  getElements(gui, module, 'optionsTable')$makeGui(tableGrp)
+  
   detailsGrp[(i<-i+1), 1] <- "Height [inches]:"
   detailsGrp[i, 2] <- setWidgets(gui, module, height = gedit("", cont=detailsGrp, coerce.with=as.numeric))
   detailsGrp[(i<-i+1), 1] <- "Width [inches]:"
   detailsGrp[i, 2] <- setWidgets(gui, module, width = gedit("", cont=detailsGrp, coerce.with=as.numeric))
   
   # handler for table (load the widht and height settings)
-  addHandlerClicked(getWidgets(gui, module, 'optionsTable'), 
-      handler = function(h, ...) {
-        index <- which(getData(gui, module, 'options')$Dimensions == svalue(h$obj))
-        if (length(index) > 0) { # make sure its not an empty index
-          getModule(gui, module)$loadWidgets(
-            width = getData(gui, module, 'options')[index,'width'],
-            height = getData(gui, module, 'options')[index,'height'])
-        }
-      })
+#   addHandlerClicked(getWidgets(gui, module, 'optionsTable'), 
+#       handler = function(h, ...) {
+#         index <- which(getData(gui, module, 'options')$Dimensions == svalue(h$obj))
+#         if (length(index) > 0) { # make sure its not an empty index
+#           getModule(gui, module)$loadWidgets(
+#             width = getData(gui, module, 'options')[index,'width'],
+#             height = getData(gui, module, 'options')[index,'height'])
+#         }
+#       })
   
   
   # directory selection
@@ -105,20 +109,37 @@ SavePlotDialog <- setRefClass(
       )
     },
     
+    makeGui = function() {
+      options <- DataTable$new()
+      options$setData(
+        frame = mutate(data.frame( # all the options for formats
+          width = c(4, 8, 16),
+          height = c(4, 6, 12),
+          stringsAsFactors = FALSE), Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)")),
+        selectedRows = 2
+      )
+      options$setSettings(invisibleColumns = c('height', 'width'))
+      setElements(optionsTable = options)
+      callSuper()
+    },
+    
     loadGui = function() {
       callSuper()
       
       # set formats table
-      data$options <<- mutate(data$options, Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)"))
-      data$options <<- unique(data$options) # only use each format once
-      loadWidgets(optionsTable = data$options["Dimensions"])
-      svalue(widgets$optionsTable, index=FALSE) <<- subset(data$options, width == data$width & height == data$height)$Dimensions
+      #data$options <<- mutate(data$options, Dimensions = paste0(height, "x", width, " (height: ", height, " inches, width: ", width, " inches)"))
+      #data$options <<- unique(data$options) # only use each format once
+      #loadWidgets(optionsTable = data$options["Dimensions"])
+      #svalue(widgets$optionsTable, index=FALSE) <<- subset(data$options, width == data$width & height == data$height)$Dimensions
     }, 
     
     saveGui = function() {
       callSuper()
       # save width and height in options
-      data$options <<- rbind(data$options, data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))# add used widht and height to settings
+      #data$options <<- rbind(data$options, data.frame(width = data$width, height = data$height, Dimensions='', stringsAsFactors=F))# add used widht and height to settings
     }
   )
 )
+
+# Testing
+#t <- SavePlotDialog$new()$makeGui()

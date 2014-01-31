@@ -142,7 +142,7 @@ setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
 
   ### Graphics Notebook
   tab <- GraphicsNotebookTab$new()
-  tab$setSettings(editablePlotLabel = TRUE, overwriteProtected = TRUE)
+  tab$setSettings(editablePlotLabel = TRUE)
   gn <- GraphicsNotebook$new(tab = tab)
   setElements(gui, module, gn = gn)
   gn$makeGui(parent = plot.frame)

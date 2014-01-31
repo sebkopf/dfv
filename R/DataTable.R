@@ -23,24 +23,28 @@ DataTable <- setRefClass(
         multiSelect = FALSE, # allow multiple selection?
         resizable = FALSE, # allow column resizing?
         sortable = FALSE, # allow sorting by clicking on column headers?
+        editableColumns = c(), # any columns editable?
+        invisibleColumns = c(), # any columns invisible?
         protect = TRUE
       )
+      
+      ### define data
+      setData(
+          frame = data.frame(empty = TRUE), # stores the data (make sure to initialize properly!)
+          selectedRows = NULL # stores the selected rows
+        )
     },
     
-    # 'Makes the gtable. If it already exists in the widgets, will delete the existing one first and then remake it.
+    # 'Makes the gtable based on the data frame
     # '@param parent (RGtkWidget) - some container like a ggroup
-    # '@param data (data.frame) - a data frame (can be just the definition without any rows but needs to be the correct row types to work!)
-    makeGui = function(parent, data, editableColumns = c(), changedHandler = NULL) {
+    makeGui = function(parent, changedHandler = NULL) {
       
       #INFO: for more information on this kind of data table layout, look at page 166+ of the R Gui guidebook!
       # topics include styling, how to have filters for columns (serachable --> look on page 172+), multiple selections, tooltips, signals, etc.
       # also, consider reading up more on gtkTreeView for its use as drag and drop source and destination (and potential reordering by drag and drop?)
       
-      # store data
-      setData(frame = data)
-      
       # gtk objects
-      table$model <<- rGtkDataFrame(data) 
+      table$model <<- rGtkDataFrame(data$frame[0,]) 
       table$view <<- gtkTreeView (table$model)
       table$selection <<- table$view$getSelection()
       
@@ -87,7 +91,7 @@ DataTable <- setRefClass(
       
       # add columns
       #cell_renderer['background'] <- 'gray80' # can style columns if want to
-      mapply(.self$makeColumn, index = 1:ncol(data), editable = names(data) %in% editableColumns, type = sapply(data, class))
+      mapply(.self$makeColumn, index = 1:ncol(data$frame), editable = names(data$frame) %in% settings$editableColumns, type = sapply(data$frame, class))
       
       # column resizability
       sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setResizable(getSettings('resizable')))
@@ -102,6 +106,13 @@ DataTable <- setRefClass(
       scrolled_window$add ( table$view )
       scrolled_window$setPolicy ("automatic", "automatic")
       setWidgets(tableGroup = scrolled_window)
+      
+      # adjust visibility
+      print("INVISLB:E")
+      print(settings$invisibleColumns)
+      print(settings)
+      
+      changeColumnVisibility(settings$invisibleColumns, FALSE) 
     },
     
     # ' make a view column in the table for the column with index in the data frame used in the model
@@ -176,9 +187,26 @@ DataTable <- setRefClass(
       callSuper()
     },
     
+    # ' load the user interface
+    loadGui = function() {
+      setTableData(data$frame)
+      selectRows(data$selectedRows)
+      callSuper()
+    },
+    
+    # ' save gui
+    saveGui = function() {
+      setData(
+        frame = getTableData(),
+        selectedRows = getSelectedRows()
+      )
+      callSuper()
+    },
+    
+    
     # change the visibility on certain columns
     # @param visible - either a single value (TRUE/FALSE) that will be applied to all columns or a vector of same length as columnns
-    changeColumnVisibility = function (columns, visible) {
+    changeColumnVisibility = function (columns, visible) {      
       # get columns and current visibility
       if (identical(class(columns), 'character'))
         columns <- which(colnames(table$model)%in%columns)
@@ -347,13 +375,13 @@ DataTable <- setRefClass(
       win <- ggroup(horizontal = FALSE, cont=gwindow("DataTable test window"), expand=TRUE)
       bgrp <- ggroup(horizontal = TRUE, cont=win)
       bgrp2 <- ggroup(horizontal = TRUE, cont=win)
+      bgrp3 <- ggroup(horizontal = TRUE, cont=win)
       tgrp <- ggroup(cont = win, expand=TRUE)
       
       # test implementations
       gbutton ("Select row ID=2", cont=bgrp, handler = function(...) test$selectRowsByValues(ID = 2))
       gbutton ("Hide column logical and factor", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('logical', 'factor'), FALSE))
       gbutton ("Show column logical and factor again and hide ID", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('ID', 'logical', 'factor'), c(FALSE, TRUE, TRUE)))
-      
       gbutton ("Add new row", cont=bgrp, handler = function(...) {
         newID <- max(test$getTableData(columns = 'ID')) + 1
         row <- test$addRow(ID = newID, character = "new row", numeric = rnorm(1), factor="orange")
@@ -367,8 +395,14 @@ DataTable <- setRefClass(
       gbutton ("Update data frame", cont=bgrp2, handler = function(...) test$setTableData(DF))
       gbutton ("Remake table\n(with sortable/resizable cols) and editable columns", cont=bgrp2, handler = function(...) {
         test$destroyGui()
-        test$setSettings(sortable = TRUE, resizable = TRUE, overwriteProtected = TRUE)
-        test$makeGui(tgrp, DF, editableColumns = c("integer", "character", "logical", "factor", "numeric"))
+        test$setSettings(sortable = TRUE, resizable = TRUE)
+        test$setSettings(editableColumns = c("integer", "character", "logical", "factor", "numeric"))
+        test$makeGui(tgrp, DF)
+      })
+      gbutton ("Save gui", cont=bgrp3, handler = function (...) {
+        test$saveGui()
+        print(test$getData('frame'))
+        print(test$getData('selectedRows'))
       })
       
       # running the DataTable
@@ -383,11 +417,15 @@ DataTable <- setRefClass(
         numeric = rnorm(3),
         stringsAsFactors=FALSE)
       
-      test$makeGui(tgrp, DF, changedHandler = function(...) print(data.frame(test$getSelectedValues())))
+      test$setData(frame = DF, selectedRows = 2)
+      test$setSettings(editableColumns = c('logical', 'numeric'))
+      test$makeGui(tgrp, changedHandler = function(...) print(data.frame(test$getSelectedValues())))
+      
+      test$loadGui()
       return (test)
     }
   )
 )
 
 # run test
-t <- DataTable$new()$test()
+#t <- DataTable$new()$test()

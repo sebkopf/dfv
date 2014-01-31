@@ -125,10 +125,10 @@ GraphicsNotebook <- setRefClass(
       if (data$nb > 0) {
         # setup save dialog
         if (!saveAll) { # save all
-          getElements("savePlotDialog")$setSettings(windowTitle = "Save plot ...", overwriteProtected = T)
+          getElements("savePlotDialog")$setSettings(windowTitle = "Save plot ...")
           getElements("savePlotDialog")$setData(filename =paste0(format(Sys.time(),format="%Y%m%d"),"_", names(widgets$nb)[data$nb]), extension = ".pdf")
         } else { # save single
-          getElements("savePlotDialog")$setSettings(windowTitle = "Save all plots ...", overwriteProtected = T)
+          getElements("savePlotDialog")$setSettings(windowTitle = "Save all plots ...")
           getElements("savePlotDialog")$setData(filename = paste0(format(Sys.time(),format="%Y%m%d"), "_"), extension = "[tab title].pdf")
         }
           

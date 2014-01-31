@@ -23,7 +23,7 @@ GraphicsNotebookTab <- setRefClass(
             mousemotion = FALSE,
             rightclickmenu = FALSE
           ),
-        protect = TRUE # these cannot be overwritten by the user
+        protect = TRUE # these are not overwritten by settings autoload
       )
     },
   

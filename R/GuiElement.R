@@ -12,12 +12,12 @@ GuiElement <- setRefClass(
     # 'Override to pull data and settings also from all sub Elements
     saveToWorkspace = function() {
       saveGui() # save the Gui (transfers information from the widgets to the settings and data lists)
-      data <<- getData() 
-      settings <<- getSettings() 
+      data <<- getData() # fetch data from all widgets in all elements
+      settings <<- getSettings() # fetch settings from all widgets in all elements
       callSuper() # actually save to workspace
     },
     
-    #' overwrite to get settings from all elements when calling getSettings without specifying fields
+    #' overload to get settings from all elements when calling getSettings without specifying fields
     getSettings = function(ids) {
       if (missing(ids)) { # get all settings
         allSettings <- c(list(), settings)
@@ -37,7 +37,7 @@ GuiElement <- setRefClass(
         return(callSuper(ids))
     },
     
-    #' overwrite to get data from all elements when calling getData without specifying fields
+    #' overload to get data from all elements when calling getData without specifying fields
     getData = function(ids) {
       if (missing(ids)) { # get all data
         allData <- c(list(), data)
@@ -57,6 +57,7 @@ GuiElement <- setRefClass(
         return(callSuper(ids))
     },
     
+    # 'Get the elements
     getElements = function(ids) {
       if (missing(ids))
         return (elements)
@@ -67,12 +68,9 @@ GuiElement <- setRefClass(
     
     # 'Set sub elements into the element data frame
     # '@param: passSettings - whether to pass settings with the same id as the element to the element
-    #     note, since these are passed down when the element is added, it will overwrite changes to defaul values once settings are loaded from previous versions 
-    #     ==> except for settings that are protected! --> see protectSettings()
-    #     if you don't want any settings or data passed to the element, yo can choose passSettings = FALSE / passData = FALSE
-    #     FIXME: perhaps introduce NON-CHANGABLE settings and data?
+    # '@param: overwriteProtectedSetting [default: FALSE] - when passing settings, whether to overwrite protected ones or not
     # '@param: passData - whether to pass data with the same id as the element to the element
-    setElements = function(..., passSettings = TRUE, passData = TRUE) {
+    setElements = function(..., passSettings = TRUE, overwriteProtectedSettings = FALSE, passData = TRUE) {
       sets <- list(...)
       if (length(sets) == 1 && class(sets[[1]]) == 'list' && is.null(names(sets)[1])) 
         sets <- sets[[1]]
@@ -81,7 +79,7 @@ GuiElement <- setRefClass(
       # passing settings and data
       for (id in names(sets)) {
         if (passSettings && !is.null(s <- getSettings(id)) && class(s) == 'list')
-          elements[[id]]$setSettings(s)
+          elements[[id]]$setSettings(s, overwriteProtected = overwriteProtectedSettings)
         if (passData && !is.null(d <- getData(id)) && class(d) == 'list')
           elements[[id]]$setData(d)
       }
@@ -90,7 +88,7 @@ GuiElement <- setRefClass(
     # 'Remove sub elements from the GuiElement
     removeElements = function(ids, cleanData = TRUE, cleanSettings = TRUE) {
       for (id in ids) {
-        elements[[id]]$destroyGui() # destroy widghets
+        elements[[id]]$destroyGui() # destroy widgets
         if (cleanData)
           data[[id]] <<- NULL # clean data
         if (cleanSettings)
@@ -163,10 +161,16 @@ GuiElement <- setRefClass(
     # 'Load all widgets that have corresponding ids in the data field with the values from their settings / data counterparts.
     autoloadWidgets = function() {
       settingIds <- intersect(names(widgets), names(settings))
-      dmsg("For ", class(.self), ", auto-loading the following widgets:")
-      dmsg("\tfrom settings: ", paste(settingIds, collapse=", "))
       dataIds <- intersect(names(widgets), names(data))
-      dmsg("\tfrom data: ", paste(dataIds, collapse=", "))
+      
+      # info messages
+      dmsg("For ", class(.self), ", auto-loading widgets...")
+      if (length(settingIds) > 0)
+        dmsg("\tfrom settings: ", paste(settingIds, collapse=", "))
+      if (length(dataIds) > 0) 
+        dmsg("\tfrom data: ", paste(dataIds, collapse=", "))
+      
+      # load widgets
       for (id in union(settingIds, dataIds))
         loadWidget(id)
     },
@@ -204,17 +208,21 @@ GuiElement <- setRefClass(
     saveWidgets = function(ids) {
       if (missing(ids)) # save all widgets
         ids <- names(widgets)
-      dmsg("For ", class(.self), ", auto-saving the following widgets:")
-
-      # save settings
+      dmsg("For ", class(.self), ", auto-saving widgets")
       settingIds <- intersect(ids, names(settings))
-      dmsg("\tto settings: ", paste(settingIds, collapse=", "))
-      setSettings(getWidgetValues(settingIds))
+      dataIds <- intersect(setdiff(ids, settingIds), names(data))
+      
+      # save settings
+      if (length(settingIds) > 0) {
+        dmsg("\tto settings: ", paste(settingIds, collapse=", "))
+        setSettings(getWidgetValues(settingIds))
+      }
       
       # save rest to data if defined in the data arrays
-      dataIds <- intersect(setdiff(ids, settingIds), names(data))
-      dmsg("\tto data: ", paste(dataIds, collapse=", "))
-      setData(getWidgetValues(dataIds))
+      if (length(dataIds) > 0) {
+        dmsg("\tto data: ", paste(dataIds, collapse=", "))
+        setData(getWidgetValues(dataIds))
+      }
     },
     
     # make gui

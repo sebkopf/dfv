@@ -15,21 +15,18 @@ dfv <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE) {
     wsVariable = wsVariable,
     windowSize = c(1024, 720),
     windowTitle = paste("Data Frame Viewer version", packageVersion('dfv')),
+    windowModal = modal,
     lrPane = 0.2, # left-right pane
-    tbPane = 0.2, # top-bottom pane
-    overwriteProtected = TRUE
+    tbPane = 0.2 # top-bottom pane
   )
   
   # load if previous object exists and user wants to reload
   if (exists(wsVariable, envir=.GlobalEnv) && 
         gconfirm("A previous instance of the Data Frame Viewer is saved in this workspace. Would you like to load it?")) {
     obj <- get(wsVariable, envir=.GlobalEnv)
-    module$setSettings(obj$settings) 
+    module$setSettings(obj$settings, overwriteProtected = FALSE)  # when auto reloading settings, important to not overwrite protected settings!
     module$setData(obj$data)
   }
-  
-  # overwrite saved settings
-  module$setSettings(windowModal = modal, overwriteProtected = TRUE)
   
   # store module if requested
   if (!missing(storeModule))
