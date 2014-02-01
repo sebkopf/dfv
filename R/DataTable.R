@@ -116,6 +116,7 @@ DataTable <- setRefClass(
     
     # ' make a view column in the table for the column with index in the data frame used in the model
     # ' for editable cells, the standard cell change handler in this class is called (feel free to overwrite)
+    # ' FIXME can't deal with date properly
     makeColumn = function(index, name = colnames(table$model)[index], editable = FALSE, type = c("numeric", "integer", "character", "logical", "factor", "icon"), changedHandler = NULL) {
       type = match.arg(type)
       
