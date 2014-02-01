@@ -46,6 +46,8 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
       list ("Import", NULL , "_Import" , NULL, NULL, NULL),
       list ("FromCb", "gtk-convert", "From Clipboard", "<ctrl>P", "Paste data from clipboard", 
             function(...) {
+              getElements(gui, module, 'dataTable')$destroyGui()
+              getElements(gui, module, 'columnsTable')$setTableData(getElements(gui, module, 'columnsTable')$getTableData(0))
               setSettings(gui, module, mode = 'clipboard')
               getElements(gui, module, 'optionsTable')$changeColumnVisibility(c(3,4), c(TRUE, FALSE))
               getModule(gui, module)$generateCode()
@@ -55,6 +57,8 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
               f=gfile("Select Excel file to import.", type="open", cont = getWindow(gui, module),
                       filter = list("Excel Files" = list(patterns=c("*.xls", "*.xlsx")), "All files" = list(patterns = c("*"))))
               if (!is.na(f)){
+                getElements(gui, module, 'dataTable')$destroyGui()
+                getElements(gui, module, 'columnsTable')$setTableData(getElements(gui, module, 'columnsTable')$getTableData(0))
                 setData(gui, module, file = f)
                 setSettings(gui, module, mode = 'excel')
                 getElements(gui, module, 'optionsTable')$changeColumnVisibility(c(3,4), c(FALSE, TRUE))
@@ -69,7 +73,17 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
       list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) getModule(gui, module)$runCode(global = TRUE) ),
       list ("Copy", "gtk-copy", "Copy code", "<ctrl>C", "Copy code to clipboard", 
             function(...) {
-              print("copy code")
+              if (exists("writeClipboard")) # windows
+                clipboard <- "clipboard"
+              else # unix/MacOS
+                clipboard <- pipe("pbcopy", "w")
+              
+              cat(getModule(gui, module)$getWidgetValue('code'), file=clipboard)
+              
+              if (!exists("writeClipboard")) # unix
+                close(clipboard)
+              
+              showInfo(gui, module, msg="INFO: code copied to clipboard.", okButton = FALSE, timer = 2) 
             } ))
   actionGrp$addActions(nav.actions)
 })
@@ -83,7 +97,7 @@ setMethod("makeMainGui", "DataImportDialogGui", function(gui, module) {
   # groups
   optionsGrp <- ggroup(container = mainGrp)
   columnsGrp <- gframe("Columns")
-  dataGrp <- gframe("Data")
+  dataGrp <- gframe("Data (first 10 rows)")
   codeGrp <- gframe("Code", expand=TRUE)
   tbPane <- gpanedgroup(dataGrp, codeGrp, expand=TRUE, horizontal=FALSE)
   tbPane2 <- gpanedgroup(columnsGrp, tbPane, container=mainGrp, expand=TRUE, horizontal=FALSE)
@@ -103,8 +117,9 @@ setMethod("makeMainGui", "DataImportDialogGui", function(gui, module) {
   columns$makeGui(columnsGrp, changedHandler = function(...) getModule(gui, module)$generateCode())
   
   # data table
-  setElements(gui, module, dataTable = DataTable$new())
-  getElements(gui, module, 'dataTable')$setSettings(sortable = TRUE, resizable = TRUE)
+  dataT <- DataTable$new()
+  setElements(gui, module, dataTable = dataT)
+  dataT$setSettings(sortable = TRUE, resizable = TRUE)
   
   # code (attributes don't seem to work sadly)
   setWidgets(gui, module, code = gtext('', wrap=TRUE, font.attr = c(style="normal", weights="bold",sizes="medium"), container = codeGrp, expand = TRUE, height=50))
@@ -155,12 +170,12 @@ DataImportDialog <- setRefClass(
           frame = data.frame(
             Name = character(0),
             Import = logical(0),
-            Type = factor(levels=c("Text", "Number", "Date", "Factor")),
+            Type = factor(levels=c("Text", "Number", "Date", "Date + Time", "Factor")),
             Values = character(0),
             stringsAsFactors = F
             )),
         dataTable = list(
-          frame = data.frame())
+          frame = data.frame(Data = character(0), Frame = character(0)))
       )
       names(data$optionsTable$frame)[c(2,4,5)] <<- c('Header row?', 'Excel sheet', 'Start row')
     },
@@ -178,6 +193,7 @@ DataImportDialog <- setRefClass(
       callSuper()
     },
     
+    # ' Generate the code for excel import
     generateCode = function() {
       options <- getElements('optionsTable')$getTableData(rows = 1)
       variable <- getElements('optionsTable')$getTableData(1, 'Variable')
@@ -203,6 +219,7 @@ DataImportDialog <- setRefClass(
         code <- paste0(code, ", \n\tcolClasses = c('", 
           paste(sapply(types, function(type) {
             switch(as.character(type),
+                   'Date + Time' = 'POSIXct',
                    'Date' = 'Date',
                    'Number' = 'numeric',
                    'character')
@@ -212,8 +229,8 @@ DataImportDialog <- setRefClass(
         tryCatch({
           eval(parse(text = code.1))
           df <- get(variable)
-          code <- paste0(code, ", \n\tcolClasses = c('", paste(sapply(df, function(col) { if (class (col)[1] == 'POSIXct') "Date" else class (col)[1] }), collapse = "', '"), "')")
-        }, error = function(e) {stop(e)}, warning = function(e) {stop(e)})
+          code <- paste0(code, ", \n\tcolClasses = c('", paste(sapply(df, function(col) { class (col)[1] }), collapse = "', '"), "')")
+        }, error = function(e) {}, warning = function(e) {})
       }
       code <- paste0(code, ")")
       
@@ -241,20 +258,24 @@ DataImportDialog <- setRefClass(
       # set code and run it
       setData(delColsCode = delColsCode) # need to know what this is to execute it separately
       loadWidgets(code = paste0(code, delColsCode))
-      runCode()
+      runCode(global = FALSE)
     },
     
-    # Actually run the code
+    # Run the code
     # ' @param global (whether to run in the global environment - warning! if TRUE, can change variables in global scope!)
     runCode = function(global = FALSE) {
+      # get code
       code <- getWidgetValue('code')
       delColsCode <- getData('delColsCode')
       importCode <- if (delColsCode == "") code else gsub(delColsCode, "", code, fixed=TRUE)
      
+      # variable name
+      variable <- getElements('optionsTable')$getTableData(1, 'Variable')
+      
       # error function when there is trouble with the code
       errorFun<-function(e) {
         err <- if (getSettings('mode') == 'clipboard') 'Make sure you have a data table copied to the clipboard.\n' else ''
-        showInfo(gui, .self, msg=paste0("ERROR: There are problems running this code.\n", err, capture.output(print(e))), type="error", timer=NULL) 
+        showInfo(gui, .self, msg=paste0("ERROR: There are problems running this code.\n", err, capture.output(print(e))), type="error", timer=NULL, okButton = FALSE) 
         stop(e)
       }
       
@@ -262,7 +283,7 @@ DataImportDialog <- setRefClass(
       tryCatch(eval(parse(text = importCode)), error = errorFun, warning = errorFun)
       
       # check what's in data frame
-      df <- get(getElements('optionsTable')$getTableData(1, 'Variable'))
+      df <- get(variable)
       
       # update columns table if this is a different data frame
       if (!identical(names(df), getElements('columnsTable')$getTableData(columns = 'Name'))) {
@@ -270,14 +291,14 @@ DataImportDialog <- setRefClass(
           switch(class(x)[1],
                  'integer' = 'Number',
                  'numeric' = 'Number',
-                 'POSIXct' = 'Date',
+                 'POSIXct' = 'Date + Time',
                  'Date' = 'Date',
                  'Text')})
         getElements('columnsTable')$setTableData(
           data.frame(
             Name = names(df), 
             Import = TRUE, 
-            Type = factor(types, levels=c("Text", "Number", "Date", "Factor")), 
+            Type = factor(types, levels=c("Text", "Number", "Date", "Date + Time", "Factor")), 
             Values = sapply(head(df, n=3), function(x) { paste0(paste(x, collapse=", "), ' ...') }),
             stringsAsFactors = F))
       }
@@ -285,63 +306,38 @@ DataImportDialog <- setRefClass(
       # try to run delete code
       if (delColsCode != "")
         tryCatch(eval(parse(text = delColsCode)), error = errorFun, warning = errorFun)
-      df <- get(getElements('optionsTable')$getTableData(1, 'Variable'))
+      df <- get(variable)
       
       # show data frame in data table (need to convert dates first though)
-      for (i in which(sapply(df, class) == "Date")) 
-        df[,i] <- format(df[,i], "%Y-%m-%d") # FIXME: cannot handle time!!
-      print(sapply(df, class))
+      showdf <- head(df, n=10)
+      types <- sapply(showdf, function(col) class(col)[1])
+      for (i in which(types == "Date")) 
+        showdf[,i] <- format(showdf[,i], "%Y-%m-%d") 
+      for (i in which(types == "POSIXct")) 
+        showdf[,i] <- format(showdf[,i], "%Y-%m-%d %H:%M:%S")
+      
       dataTable <- getElements('dataTable')
       dataTable$destroyGui()
-      dataTable$setData(frame = head(df, n=10))
+      dataTable$setData(frame = showdf)
       dataTable$makeGui(getWidgets('dataGrp'))
       dataTable$loadGui()
       
-      # success message
-      if (!global)
-        showInfo(gui, .self, msg="INFO: All clear, code can be run.", okButton = FALSE, timer = NULL)
-      else
-        showInfo(gui, .self, msg=paste0("INFO: Data Frame '", getElements('optionsTable')$getTableData(1, 'Variable'), '" created.'), timer = NULL, okButton = FALSE)
+      # store in global variable and show success message
+      if (global) {
+        assign(variable, df, envir=.GlobalEnv)
+        showInfo(gui, .self, msg=paste0("SUCCESS! Data Frame '", variable, "' created."), timer = NULL, okButton = FALSE)
+      } else
+         showInfo(gui, .self, msg="INFO: All clear, code can be run.", okButton = FALSE, timer = NULL) 
     }
   )
 )
 
 # Testing
-t <- DataImportDialog$new()
-t$setSettings(windowModal = FALSE, mode = 'excel') # easier for testing purposes
-t$setData(file = '/Users/sk/Dropbox/Tools/software/r/dfv/Workbook1.xlsx')
-t$makeGui()
-#Sys.sleep(1)
-#t$generateCode()
+# t <- DataImportDialog$new()
+# t$setSettings(windowModal = FALSE, mode = 'excel') # easier for testing purposes
+# t$setData(file = '/Users/sk/Dropbox/Tools/software/r/dfv/Workbook1.xlsx')
+# t$makeGui()
+# Sys.sleep(1)
+# t$generateCode()
 
-
-a <- function() {
-  # variable name
-  # header?
-  # skip = 0
-  # separator = tab/comma
-  cp.pasteDF<-function(header=TRUE, sep="\t", skip=0, comment.char="", row.names=NULL, quote=""){
-    return(read.clipboard(sep=sep, stringsAsFactors=FALSE, header=header, 
-                          skip=skip, comment.char=comment.char, row.names=NULL, quote=quote))
-  }
-  
-  excel.readDF <- function(file, sheet = 1, startRow = 1, stringsAsFactors=FALSE, trueColNames = TRUE) {
-    df <- read.xlsx2(file, sheet, startRow=startRow, stringsAsFactors=stringsAsFactors, header=TRUE) 
-    if (trueColNames) {
-      dfcols <- read.xlsx(file, sheet, rowIndex=startRow, header=FALSE, stringsAsFactors=stringsAsFactors) 
-      names(df) <- gsub("\\s*$", "", dfcols, perl=T) # trailing whitespaces removed
-    }
-    return(df)
-  }
-  
-  errFun<-function(e) { gmessage(paste("ERROR: could not paste\n.", capture.output(print(e))), title="Could not paste from clipboard.", icon="error", parent=dfv$win); stop(e) }
-  tryCatch( df<-cp.pasteDF(),  # try to paste
-            warning = errFun,
-            error = errFun)
-  if (!is.empty(dfname<-ginput("Pasting succesful.\nWhat variable name would you like to save this as?"))) {
-    assign(dfname, df, envir=.GlobalEnv)
-    DFV.refreshDataFramesTable(dfv)
-    DFV.loadDataFrame(dfv, dfname)
-  }
-}
 
