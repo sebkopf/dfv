@@ -37,7 +37,9 @@ DataTable <- setRefClass(
     
     # 'Makes the gtable based on the data frame
     # '@param parent (RGtkWidget) - some container like a ggroup
-    makeGui = function(parent, changedHandler = NULL) {
+    # '@param selectionHandler - fired when row selection of the table changes
+    # '@param changedHandler - fired when a column value in an editable table changes
+    makeGui = function(parent, selectionHandler = NULL, changedHandler = NULL) {
       
       #INFO: for more information on this kind of data table layout, look at page 166+ of the R Gui guidebook!
       # topics include styling, how to have filters for columns (serachable --> look on page 172+), multiple selections, tooltips, signals, etc.
@@ -86,12 +88,13 @@ DataTable <- setRefClass(
         table$selection$setMode ("single") 
       
       # selection handler
-      if (!is.null(changedHandler))
-        handlers$changedHandler <<- gSignalConnect (table$selection, "changed" , changedHandler)
+      if (!is.null(selectionHandler))
+        handlers$selectionHandler <<- gSignalConnect (table$selection, "changed" , selectionHandler)
       
       # add columns
       #cell_renderer['background'] <- 'gray80' # can style columns if want to
-      mapply(.self$makeColumn, index = 1:ncol(data$frame), editable = names(data$frame) %in% settings$editableColumns, type = sapply(data$frame, class))
+      for (i in 1:ncol(data$frame))
+        makeColumn(index = i, editable = names(data$frame)[i] %in% settings$editableColumns, type = class(data$frame[1,i]), changedHandler = changedHandler)
       
       # column resizability
       sapply ( seq_len(ncol (table$model)), function (i) table$view$getColumn(i - 1)$setResizable(getSettings('resizable')))
@@ -113,7 +116,7 @@ DataTable <- setRefClass(
     
     # ' make a view column in the table for the column with index in the data frame used in the model
     # ' for editable cells, the standard cell change handler in this class is called (feel free to overwrite)
-    makeColumn = function(index, name = colnames(table$model)[index], editable = FALSE, type = c("numeric", "integer", "character", "logical", "factor", "icon")) {
+    makeColumn = function(index, name = colnames(table$model)[index], editable = FALSE, type = c("numeric", "integer", "character", "logical", "factor", "icon"), changedHandler = NULL) {
       type = match.arg(type)
       
       ## define cell renderer
@@ -127,6 +130,7 @@ DataTable <- setRefClass(
       
       # initialize column
       vc <- gtkTreeViewColumnNewWithAttributes(name, cr)
+      #vc$setClickable(TRUE)
       table$view$InsertColumn(vc, -1)  # always add column at the end of treeView (-1) but could also specify here
       
       # link back to model (which is 0 index based) 
@@ -142,15 +146,10 @@ DataTable <- setRefClass(
         if (type == "logical") cr["activatable"] <- TRUE
         else cr["editable"] <- TRUE
         
-        # combo box needs its own data store for editing
+        # combo box needs its own data store for editing (add levels of the factor to the combo box)
         if(type == "factor") { 
           cstore <- gtkListStore("gchararray")
-          rGtkstore <- table$view$getModel()
-          vals <- rGtkstore[, index, drop=TRUE]
-          for(i in as.character(unique(vals))) {
-            iter <- cstore$append()
-            cstore$setValue(iter$iter,column=0, i)
-          }
+          sapply(levels(getTableData(1, index)), function(lvl) cstore$setValue(cstore$append()$iter,column=0, as.character(lvl)) )
           cr['model'] <- cstore
           cr['text-column'] <- 0        
         }
@@ -159,6 +158,12 @@ DataTable <- setRefClass(
         gSignalConnect(cr, signal = if(type != "logical") "edited" else "toggled",
                              f = .self$columnChanged, 
                              data = list(column = colnames(table$model)[index]))
+        
+        # custom changed handler
+        if (!is.null(changedHandler)) 
+          gSignalConnect(cr, signal = if(type != "logical") "edited" else "toggled",
+                         f = changedHandler, 
+                         data = list(column = colnames(table$model)[index]))
       }
     },
     
@@ -342,7 +347,7 @@ DataTable <- setRefClass(
     selectRows = function(rows, blockHandler = FALSE) {
       # block handler if requested
       if (blockHandler)
-        gSignalHandlerBlock(table$selection, handlers$changedHandler)
+        gSignalHandlerBlock(table$selection, handlers$selectionHandler)
       
       # make selection
       table$selection$unselectAll()
@@ -353,7 +358,7 @@ DataTable <- setRefClass(
       
       # unblock handler
       if (blockHandler)
-        gSignalHandlerUnblock(table$selection, handlers$changedHandler)
+        gSignalHandlerUnblock(table$selection, handlers$selectionHandler)
     },
 
     selectRowsByValues = function(..., blockHandler = FALSE) {
@@ -414,8 +419,9 @@ DataTable <- setRefClass(
         stringsAsFactors=FALSE)
       
       test$setData(frame = DF, selectedRows = 2)
-      test$setSettings(editableColumns = c('logical', 'numeric'))
-      test$makeGui(tgrp, changedHandler = function(...) print(data.frame(test$getSelectedValues())))
+      test$setSettings(sortable = TRUE, resizable = TRUE)
+      test$setSettings(editableColumns = c("integer", "character", "logical", "factor", "numeric"))
+      test$makeGui(tgrp, selectionHandler = function(...) print(data.frame(test$getSelectedValues())))
       
       test$loadGui()
       return (test)
@@ -424,4 +430,4 @@ DataTable <- setRefClass(
 )
 
 # run test
-#t <- DataTable$new()$test()
+# t <- DataTable$new()$test()

@@ -25,6 +25,7 @@ Collate:
   'Module.R'
   'ModalDialog.R'
   'SavePlotDialog.R'
+  'DataImportDialog.R'
   'GraphicsNotebookTab.R'
   'GraphicsNotebook.R'
   'DataTable.R'

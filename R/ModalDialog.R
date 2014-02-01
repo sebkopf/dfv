@@ -2,6 +2,32 @@
 
 ModalDialogGui <- setClass("ModalDialogGui", contains="BaseGui")
 
+setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
+  return (
+    '<menu name = "DFV" action="DFV">
+      <menuitem action="Reload"/>
+      <menuitem action="SaveToWS"/>
+      <menuitem action="Quit"/>
+    </menu>
+    <menu name = "Data" action="Data">
+      <menuitem action="Paste"/>
+      <menuitem action="ImportExcel"/>
+    </menu>
+    <menu name = "Code" action="Code">
+      <menuitem action="Run"/>
+      <menuitem action="Snippets"/>
+    </menu>
+    <menu name = "Plots" action="Plots">
+      <menuitem action="NewPlotTab"/>
+      <menuitem action="ClosePlotTab"/>
+      <menuitem action="SavePlot"/>
+      <menuitem action="SaveAllPlots"/>
+      <menuitem action="PrintPlot"/>
+    </menu>
+    <menu name = "Help" action="Help">
+      <menuitem action="ggplot"/>
+    </menu>')
+})
 
 setMethod("getToolbarXML", "ModalDialogGui", function(gui, module) {
   return (
@@ -18,7 +44,7 @@ setMethod("getToolbarXML", "ModalDialogGui", function(gui, module) {
 setMethod("setNavigationActions", "ModalDialogGui", function(gui, module, actionGrp) {
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
-      list ("Ok", getSettings(gui, module, "ok.icon"), getSettings(gui, module, "ok.label") , NULL, getSettings(gui, module, "ok.tooltip"), 
+      list ("Ok", getSettings(gui, module, "ok.icon"), getSettings(gui, module, "ok.label") , getSettings(gui, module, "ok.key"), getSettings(gui, module, "ok.tooltip"), 
             function(...) {
               setData(gui, module, saved = TRUE)
               getModule(gui, module)$saveGui()
@@ -50,6 +76,7 @@ ModalDialog <- setRefClass(
         ok.icon = "gtk-apply", # define button settings
         ok.label = "Ok",
         ok.tooltip = "Apply",
+        ok.key = NULL,
         cancel.icon = "gtk-cancel",
         cancel.label = "Cancel",
         cancel.tooltip = "Cancel",

@@ -168,12 +168,14 @@ setMethod("makeNavigation", "BaseGui", function(gui, module) {
   }
   getToolkitWidget(getWindow(gui, module))$addAccelGroup (uimanager$getAccelGroup()) # add keyboard triggers
   
+  return(uimanager)
 })
 
 setMethod("makeInfoBar", "BaseGui", function(gui, module){
   infoBar <- gtkInfoBar (show=FALSE) 
   infoBar$setNoShowAll(TRUE)
   infoLabel <- gtkLabel ( "Warning , Warning")
+  infoLabel$setLineWrap(TRUE)
   infoBar$setMessageType("question") 
   infoBar$getContentArea()$add(infoLabel)
   infoOkButton <- infoBar$addButton(button.text = "gtk-ok", response.id = GtkResponseType['ok'])

@@ -17,7 +17,7 @@ setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
   detailsGrp[i, 2:3, expand=TRUE] <- (tableGrp <- ggroup(cont = detailsGrp, expand = TRUE))
   
   # options table
-  getElements(gui, module, 'optionsTable')$makeGui(tableGrp, changedHandler = function(...) {
+  getElements(gui, module, 'optionsTable')$makeGui(tableGrp, selectionHandler = function(...) {
     # get values of width and height in table and load the same name 'width' and 'height' text widgets with it
     getModule(gui, module)$loadWidgets(
       as.list(getElements(gui, module, 'optionsTable')$getSelectedValues(c('width', 'height'))) 
@@ -81,7 +81,6 @@ SavePlotDialog <- setRefClass(
         ok.icon = "gtk-save", # overwrite
         ok.label = "Save",
         ok.tooltip = "Save PDF(s).",
-        overwriteProtected = TRUE,
         protect = TRUE
       )
       
