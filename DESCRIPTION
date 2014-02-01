@@ -14,7 +14,8 @@ Depends:
     psych,
     scales,
     gWidgets, 
-    RGtk2
+    RGtk2,
+    xlsx
 License: GPL (>= 2)
 Collate:
   'dfv.R'

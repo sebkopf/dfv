@@ -46,5 +46,6 @@ install.packages('ggplot2', depen=T) # for plotting purposes
 install.packages('psych', depen=T) # for implementation of copy & paste
 install.packages('gWidgets', depen=T) # the generic widgets interface
 install.packages('RGtk2', depen=T) # for specific GTK toolkit 
+install.packages('xlsx', depen=T) # for reading excel files
 ```
 
