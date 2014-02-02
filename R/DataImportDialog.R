@@ -150,12 +150,7 @@ DataImportDialog <- setRefClass(
       
       # default data for the data import dialog and all its elements
       setData(
-        plotsPath = getwd(),
-        plotsPathIndex = integer(0),
-        filename = "",
-        extension = ".pdf",
-        width = 8,
-        height = 6,
+        file = "", 
         optionsTable = list(
           frame = data.frame( # all the options for formats
             Variable = 'data',
@@ -178,19 +173,6 @@ DataImportDialog <- setRefClass(
           frame = data.frame(Data = character(0), Frame = character(0)))
       )
       names(data$optionsTable$frame)[c(2,4,5)] <<- c('Header row?', 'Excel sheet', 'Start row')
-    },
-    
-    # ' make DataTable Element
-    makeGui = function() {
-      callSuper()
-    },
-    
-    loadGui = function() {
-      callSuper()
-    }, 
-    
-    saveGui = function() {
-      callSuper()
     },
     
     # ' Generate the code for excel import

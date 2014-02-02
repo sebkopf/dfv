@@ -171,14 +171,15 @@ DataTable <- setRefClass(
     # ' default column data changed handler (for editable columns)
     # ' overwrite if need be
     columnChanged = function(cell, path, newValue, ...) {
+      row <- as.numeric(path) + 1
       if(nargs() == 3) {
         userData <- newValue 
-        newValue <- NA # no newValue (toggle)
+        newValue <- !table$model[row, userData$column] # invert value (toggle)
       } else 
         userData <- ..1
       l <- list()
       l[userData$column] <- newValue
-      editRow(as.numeric(path) + 1, l)
+      editRow(row, l)
       return(FALSE)
     },
 
@@ -226,12 +227,13 @@ DataTable <- setRefClass(
     #' might as well use this one for a little more flexbility
     #' @param rows only supports indices (not rownames, they mean nothing to GTK)
     #' @param columns can be either indices or column names
-    getTableData = function (rows, columns) {
+    #' @param drop - whether to drop to a list if there's only a single entry (default: TRUE)
+    getTableData = function (rows, columns, drop = TRUE) {
       if (missing(rows))
         rows <- seq_len(nrow(table$model)) # return all rows by default
       if (missing(columns)) 
         columns <- seq_len(ncol(table$model)) # return all columns by default
-      return(table$model[rows, columns])
+      return(table$model[rows, columns, drop = drop])
     },
     
     # ' Get Row numbers from values in the specified column
@@ -276,7 +278,13 @@ DataTable <- setRefClass(
     # ' @param position: index where to add rows (0 = at the end)
     addRow = function(..., position = 0) {
       emptyRow <- table$model[0,] # copy structure
-      emptyRow[1,1] <- NA # initialize      
+      emptyRow[1,1] <- NA # initialize
+      # initialize factors
+      for (col in which(sapply(emptyRow, class) == "factor")) 
+        emptyRow[1,col] <- levels(table$model[,col])[1]
+      # initialize logical
+      for (col in which(sapply(emptyRow, class) == "logical")) 
+        emptyRow[1,col] <- FALSE
       table$model$appendRows(emptyRow) # add empty row
       row <- nrow(table$model) # newly added row
       editRow(row, ...) # update row with proper data
@@ -305,7 +313,7 @@ DataTable <- setRefClass(
                    "character" = as.character(vals[[col]]),
                    "numeric" = as.numeric(vals[[col]]),
                    "factor"  = as.character(vals[[col]]),
-                   "logical" =  !as.logical(table$model[row,col])),
+                   "logical" =  as.logical(vals[[col]])),
                 silent=TRUE)
           
           # check if something went wrong
@@ -386,7 +394,7 @@ DataTable <- setRefClass(
       gbutton ("Show column logical and factor again and hide ID", cont=bgrp, handler = function(...) test$changeColumnVisibility(c('ID', 'logical', 'factor'), c(FALSE, TRUE, TRUE)))
       gbutton ("Add new row", cont=bgrp, handler = function(...) {
         newID <- max(test$getTableData(columns = 'ID')) + 1
-        row <- test$addRow(ID = newID, character = "new row", numeric = rnorm(1), factor="orange")
+        row <- test$addRow(ID = newID, character = "new row", logical = FALSE, numeric = rnorm(1), factor="orange")
         test$selectRows(row)
       })
       gbutton ("Edit selected row", cont=bgrp, handler = function(...) {

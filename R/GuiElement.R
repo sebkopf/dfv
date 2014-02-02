@@ -210,7 +210,7 @@ GuiElement <- setRefClass(
     
     # save widget values to settings and data arrays if the fields are defined (settings takes presedence over data!)
     saveWidgets = function(ids) {
-      if (missing(ids)) # save all widgets
+      if (missing(ids)) # save all widgets that have data/settings links
         ids <- names(widgets)
       dmsg("For ", class(.self), ", auto-saving widgets")
       settingIds <- intersect(ids, names(settings))
