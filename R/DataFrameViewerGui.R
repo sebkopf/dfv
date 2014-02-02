@@ -65,12 +65,18 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
       list ("Data", NULL , "_Data" , NULL, NULL, NULL),
       list ("Import", "gtk-select-color", "Import Data", "<ctrl>I", "Import data from the clipboard or from Excel", function(...) { 
         getElements(gui, module, "importDialog")$makeGui()
+        if ( getElements(gui, module, "importDialog")$dialogSaved() ) 
+          getElements(gui, module, "importDialog")$saveGui(fetchData = TRUE, fetchSettings = TRUE)
       } ),
       list ("Melt", "gtk-convert", "Melt Data", "<ctrl>M", "Melt existing data frames into a format that's easy to plot with ggplot", function(...) { 
         getElements(gui, module, "meltDialog")$makeGui()
+        if ( getElements(gui, module, "meltDialog")$dialogSaved() )
+          getElements(gui, module, "meltDialog")$saveGui(fetchData = TRUE, fetchSettings = TRUE)
       } ),
       list ("AddInfo", "gtk-info", "Add Info", NULL, "Add information to an existing data frame to inform your ggplots", function(...) { 
         getElements(gui, module, "infoDialog")$makeGui()
+        if ( getElements(gui, module, "infoDialog")$dialogSaved() )
+          getElements(gui, module, "infoDialog")$saveGui(fetchData = TRUE, fetchSettings = TRUE)
       } ),
       list ("Code", NULL , "_Code" , NULL, NULL, NULL),
       list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { dmsg("run") } ),

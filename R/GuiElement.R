@@ -11,9 +11,7 @@ GuiElement <- setRefClass(
     
     # 'Override to pull data and settings also from all sub Elements
     saveToWorkspace = function() {
-      saveGui() # save the Gui (transfers information from the widgets to the settings and data lists)
-      data <<- getData() # fetch data from all widgets in all elements
-      settings <<- getSettings() # fetch settings from all widgets in all elements
+      saveGui(fetchData = TRUE, fetchSettings = TRUE) # save the Gui (transfers information from the widgets to the settings and data lists)
       callSuper() # actually save to workspace
     },
     
@@ -252,12 +250,18 @@ GuiElement <- setRefClass(
     },
     
     # save (save all widgets by default, including all elements)
-    saveGui = function() {
+    #'@param fetchData/Settings - whether to retrieve all the data/settings in all sub elements and store them in this GuiElement's settings (use for top level save)
+    #'        Note: default is FALSE for standard GuiElements, TRUE for Module and ModalDialogs
+    saveGui = function(fetchData = FALSE, fetchSettings = FALSE) {
       saveWidgets()
       for (ele in elements) {
         if (length(ele$widgets) > 0) # only save if there are any widgets, i.e. gui is actualyl initialized
           ele$saveGui()
       }
+      if (fetchData)
+        data <<- getData() # fetch data from all widgets in all elements
+      if (fetchSettings)
+        settings <<- getSettings() # fetch settings from all widgets in all elements
     }
   )
 )

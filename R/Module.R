@@ -34,6 +34,11 @@ Module <- setRefClass(
      makeGui = function(...) {
        showGui(gui, .self) # show module Gui
        # Note: the loadGui() function is executed via the BaseGui through the focusHandler to enable data loading in modal dialogs
+     },
+     
+     #' By default, Modal Dialog fetches data and settings from its GuiElements when saving the Gui
+     saveGui = function(fetchData = TRUE, fetchSettings = TRUE) {
+       callSuper(fetchData = fetchData, fetchSettings = fetchSettings)
      }
   )
 )

@@ -89,6 +89,11 @@ ModalDialog <- setRefClass(
       setData(saved = FALSE) # records response from dialog
     },
     
+    #' By default, Modal Dialog fetches data and settings from its GuiElements when saving the Gui
+    saveGui = function(fetchData = TRUE, fetchSettings = TRUE) {
+      callSuper(fetchData = fetchData, fetchSettings = fetchSettings)
+    },
+    
     # 'Whether the dialog was saved (i.e. OK/Apply button pressed)
     dialogSaved = function() {
       return (getData('saved'))

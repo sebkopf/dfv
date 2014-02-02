@@ -112,6 +112,10 @@ DataTable <- setRefClass(
       
       # adjust visibility
       changeColumnVisibility(settings$invisibleColumns, FALSE) 
+
+      # FIXME this is a hack
+      # (this widget is only made so autoSave works, which requires at least 1 widget in the guielement but since DataTable saves the view in $table, need this)
+      setWidgets(autosave = glabel('enable-autosave'))
     },
     
     # ' make a view column in the table for the column with index in the data frame used in the model
@@ -200,7 +204,7 @@ DataTable <- setRefClass(
     # ' save gui
     saveGui = function() {
       setData(
-        frame = getTableData(),
+        frame = getTableData(drop = FALSE),
         selectedRows = getSelectedRows()
       )
       callSuper()
