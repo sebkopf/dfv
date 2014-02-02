@@ -9,12 +9,12 @@ setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
       <menuitem action="Quit"/>
     </menu>
     <menu name = "Data" action="Data">
-      <menuitem action="Paste"/>
-      <menuitem action="ImportExcel"/>
+      <menuitem action="Import"/>
+      <menuitem action="Melt"/>
+      <menuitem action="AddInfo"/>
     </menu>
     <menu name = "Code" action="Code">
       <menuitem action="Run"/>
-      <menuitem action="Snippets"/>
     </menu>
     <menu name = "Plots" action="Plots">
       <menuitem action="NewPlotTab"/>
@@ -32,8 +32,9 @@ setMethod("getToolbarXML", "DataFrameViewerGui", function(gui, module) {
   return (
     nav <- '
     <toolitem action="SaveToWS"/>
-    <toolitem action="Paste"/>
-    <toolitem action="ImportExcel"/>
+    <toolitem action="Import"/>
+    <toolitem action="Melt"/>
+    <toolitem action="AddInfo"/>
     <separator expand="true"/>
     <toolitem action="Run"/>
     <separator expand="true"/>
@@ -62,8 +63,15 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
       }) , 
       list ("Quit", "gtk-quit", "Quit", "<ctrl>Q", "Quit program", function(...) destroyGui(gui, module) ),
       list ("Data", NULL , "_Data" , NULL, NULL, NULL),
-      list ("Paste", "gtk-copy", "Paste Data", NULL, "Paste data from the clipboard", function(...) { dmsg("paste") } ),
-      list ("ImportExcel", "gtk-convert", "Import data", NULL, "Import data from excel spreadsheet", function(...) { dmsg("excel import") } ),
+      list ("Import", "gtk-select-color", "Import Data", "<ctrl>I", "Import data from the clipboard or from Excel", function(...) { 
+        getElements(gui, module, "importDialog")$makeGui()
+      } ),
+      list ("Melt", "gtk-convert", "Melt Data", "<ctrl>M", "Melt existing data frames into a format that's easy to plot with ggplot", function(...) { 
+        getElements(gui, module, "meltDialog")$makeGui()
+      } ),
+      list ("AddInfo", "gtk-info", "Add Info", NULL, "Add information to an existing data frame to inform your ggplots", function(...) { 
+        getElements(gui, module, "infoDialog")$makeGui()
+      } ),
       list ("Code", NULL , "_Code" , NULL, NULL, NULL),
       list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { dmsg("run") } ),
       list ("Snippets", "gtk-find-and-replace", "Code Snippets", NULL, "Save/load code snippets", function(...) { gmessage("Sorry, not implemented yet.") } ),
@@ -91,6 +99,11 @@ setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
   setMenuGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   mainGrp <- ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0, expand=TRUE)
   setToolbarGroup(gui, module, ggroup(horizontal=TRUE, cont=getWinGroup(gui, module), spacing=0, expand=FALSE))
+  
+  # external dialogs
+  setElements(gui, module, 'importDialog' = DataImportDialog$new()) 
+  setElements(gui, module, 'meltDialog' = DataMeltDialog$new()) 
+  setElements(gui, module, 'infoDialog' = DataInfoDialog$new()) 
   
   #setToolbarGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   

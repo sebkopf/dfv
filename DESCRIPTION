@@ -19,6 +19,7 @@ Depends:
 License: GPL (>= 2)
 Collate:
   'dfv.R'
+  'utils.R'
   'BaseGui.R'
   'DataFrameViewerGui.R'
   'DataElement.R'
@@ -27,6 +28,8 @@ Collate:
   'ModalDialog.R'
   'SavePlotDialog.R'
   'DataImportDialog.R'
+  'DataMeltDialog.R'
+  'DataInfoDialog.R'
   'GraphicsNotebookTab.R'
   'GraphicsNotebook.R'
   'DataTable.R'

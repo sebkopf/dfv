@@ -134,8 +134,6 @@ GraphicsNotebook <- setRefClass(
           
         getElements("savePlotDialog")$makeGui() # this is a modal dialog so method will not continue until it is done
         if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
-          dmsg("settings :", elements$savePlotDialog$getData())
-          
           if (!saveAll) {
             filepath <- file.path(elements$savePlotDialog$data$plotsPath, paste0(elements$savePlotDialog$data$filename, ".pdf"))
             dmsg("Saving active plot to file ", filepath)

@@ -54,12 +54,12 @@ setMethod("makeMainGui", "DataMeltDialogGui", function(gui, module) {
   optionsLayout[1, 1] <- "  Data frame:"
   optionsLayout[1, 2] <- (df.box <- gcombobox(sort(names(which(sapply(.GlobalEnv, is.data.frame)))), selected = 0, cont = optionsLayout, 
                                               handler = function(h, ...) getModule(gui, module)$loadDataFrame()))
-  optionsLayout[1, 3] <- "  Output variable:"
-  optionsLayout[1, 4] <- (df.melt <- gedit("", cont = optionsLayout))
-  optionsLayout[2, 1] <- "  Melt variable:"
-  optionsLayout[2, 2] <- (melt.var <- gedit("", cont = optionsLayout))
-  optionsLayout[2, 3] <- "  Melt value:"
-  optionsLayout[2, 4] <- (melt.val <- gedit("", cont = optionsLayout))
+  optionsLayout[2, 1] <- "  Output variable:"
+  optionsLayout[2, 2] <- (df.melt <- gedit("", cont = optionsLayout))
+  optionsLayout[3, 1] <- "  Melt variable:"
+  optionsLayout[3, 2] <- (melt.var <- gedit("", cont = optionsLayout))
+  optionsLayout[4, 1] <- "  Melt value:"
+  optionsLayout[4, 2] <- (melt.val <- gedit("", cont = optionsLayout))
   addHandlerKeystroke(df.melt, handler = function(h, ...) getModule(gui, module)$generateCode())
   addHandlerKeystroke(melt.val, handler = function(h, ...) getModule(gui, module)$generateCode())
   addHandlerKeystroke(melt.var, handler = function(h, ...) getModule(gui, module)$generateCode())
