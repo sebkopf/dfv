@@ -17,7 +17,8 @@ dfv <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE) {
     windowTitle = paste("Data Frame Viewer version", packageVersion('dfv')),
     windowModal = modal,
     lrPane = 0.2, # left-right pane
-    tbPane = 0.2 # top-bottom pane
+    rtbPane = 0.8, # top-bottom pane on the left
+    ltbPane = 0.5 # top-bottom pane on the right
   )
   
   # load if previous object exists and user wants to reload
@@ -48,3 +49,10 @@ dmsg <- function(...) {
   if (DEBUG)
     message(list(...))
 }
+
+# Test data frame
+dfv.test.df <- data.frame(
+  ID=1:500,
+  x=rnorm(n=500, m=3, sd=1), 
+  y=rnorm(n=500, m=3, sd=1),
+  info=c("Banjo", "Turtle", "Jetpack", "Ferret", "Pizza"))
