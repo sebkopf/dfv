@@ -50,18 +50,9 @@ setMethod("setNavigationActions", "DataInfoDialogGui", function(gui, module, act
       list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) getModule(gui, module)$runCode(global = TRUE) ),
       list ("Copy", "gtk-copy", "Copy code", "<ctrl>C", "Copy code to clipboard", 
             function(...) {
-              if (exists("writeClipboard")) # windows
-                clipboard <- "clipboard"
-              else # unix/MacOS
-                clipboard <- pipe("pbcopy", "w")
-              
-              cat(getModule(gui, module)$getWidgetValue('code'), file=clipboard)
-              
-              if (!exists("writeClipboard")) # unix
-                close(clipboard)
-              
+              copyToClipboard(getModule(gui, module)$getWidgetValue('code'))
               showInfo(gui, module, msg="INFO: code copied to clipboard.", okButton = FALSE, timer = 2) 
-            } ))
+            }))
   actionGrp$addActions(nav.actions)
 })
 
@@ -102,7 +93,7 @@ setMethod("makeMainGui", "DataInfoDialogGui", function(gui, module) {
   
   # code (attributes don't seem to work sadly)
   setWidgets(gui, module, code = gtext('', wrap=TRUE, font.attr = c(style="normal", weights="bold",sizes="medium"), container = codeGrp, expand = TRUE, height=50))
-  setWidgets(gui, module, showData = gcheckbox("Automatically preview data (this can be very slow for large data frames)", cont = codeGrp))
+  setWidgets(gui, module, showData = gcheckbox("Automatically preview data (this can be very slow for large data frames)", handler = function(h, ...) getModule(gui, module)$generateCode(), cont = codeGrp))
 })
 
 DataInfoDialog <- setRefClass(
@@ -143,15 +134,6 @@ DataInfoDialog <- setRefClass(
         dataTable = list(
           frame = data.frame(Data = character(0), Frame = character(0)))
       )
-    },
-    
-    # ' make DataTable Element
-    makeGui = function() {
-      callSuper()
-    },
-    
-    saveGui = function() {
-      callSuper()
     },
     
     # ' Load the layout of the mapping table for a new data frame
@@ -265,7 +247,6 @@ DataInfoDialog <- setRefClass(
       # get code
       code <- getWidgetValue('code')
       
-      print(code)
       if (code != '') {
       
         # modified data frame
@@ -282,8 +263,6 @@ DataInfoDialog <- setRefClass(
         
         # check what's in data frame
         df.mod <- get(df.mod.name)
-        print(df.mod)
-        print(sapply(df.mod, class))
         
         # show data frame in data table (need to convert dates first though)
         if (getWidgetValue('showData')) {

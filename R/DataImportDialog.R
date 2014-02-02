@@ -73,18 +73,9 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
       list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) getModule(gui, module)$runCode(global = TRUE) ),
       list ("Copy", "gtk-copy", "Copy code", "<ctrl>C", "Copy code to clipboard", 
             function(...) {
-              if (exists("writeClipboard")) # windows
-                clipboard <- "clipboard"
-              else # unix/MacOS
-                clipboard <- pipe("pbcopy", "w")
-              
-              cat(getModule(gui, module)$getWidgetValue('code'), file=clipboard)
-              
-              if (!exists("writeClipboard")) # unix
-                close(clipboard)
-              
+              copyToClipboard(getModule(gui, module)$getWidgetValue('code'))
               showInfo(gui, module, msg="INFO: code copied to clipboard.", okButton = FALSE, timer = 2) 
-            } ))
+            }))
   actionGrp$addActions(nav.actions)
 })
 
