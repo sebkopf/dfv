@@ -312,40 +312,6 @@ DataInfoDialog <- setRefClass(
 )
 
 # Testing
-t <- DataInfoDialog$new()
-t$setSettings(windowModal = FALSE) # easier for testing purposes
-t$makeGui()
-# Sys.sleep(1)
-# t$generateCode()
-
-
-
-testDF <-data.frame(
-  ID=1:500,
-  x=rnorm(n=500, m=3, sd=1), 
-  y=rnorm(n=500, m=3, sd=1),
-  info=c("Banjo", "Turtle", "Jetpack", "Ferret", "Pizza"))
-
-# 
-# map <- data.frame(lookupColumn = character(), lookupValue = character(), newColumn = character(), newValue = character(), regexp = logical(), stringsAsFactors = F)
-# map[nrow(map) + 1, ] <- list('ID', 'c(1,2,3)', 'hello', 'why', FALSE)
-# map[nrow(map) + 1, ] <- list('ID', 'c(4)', 'bla', 'yes', FALSE)
-# map[nrow(map) + 1, ] <- list('ID', 'c(5,6)', 'bla', 'not', FALSE)
-# map[nrow(map) + 1, ] <- list('wurst', '^P.*', 'nice', 'hey', TRUE)
-# 
-# mapTransform <- function (data, map) {
-#   for (i in 1:nrow(map)) {
-#     # search lookupColumn by lookupValue as regular expression (regexp = TRUE)
-#     if (map$regexp[i]) rows <- grep(map$lookupValue[i], data[[map$lookupColumn[i]]], value = FALSE)
-#     # evalute lookupValue and search directly in lookupColumn
-#     else rows <- which(data[[map$lookupColumn[i]]] %in% eval(parse(text = map$lookupValue[i])))
-#     # create newColumn if it does not exist yet
-#     if (is.null(data[[map$newColumn[i]]])) data[map$newColumn[i]] <- character()
-#     # assign newValue
-#     data[rows, map$newColumn[i]] <- map$newValue[i]
-#   }
-#   return(data)
-# }
-# 
-# print(mapTransform(data, map))
-# include code to transform to factor!
+#t <- DataInfoDialog$new()
+#t$setSettings(windowModal = FALSE) # easier for testing purposes
+#t$makeGui()
