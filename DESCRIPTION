@@ -2,10 +2,10 @@ Package: dfv
 Type: Package
 Title: Data Frame Viewer.
 Version: 1.0
-Date: 2013-11-01
+Date: 2014-02-02
 Authors@R: c(
   person("Sebastian", "Kopf", role = c("aut", "cre"), email = "seb.kopf@gmail.com"))
-Description: GUI to facilitate getting started with using data frames and ggplot to explore data.
+Description: Gui to facilitate getting started with using R for data processing. Illustrates how to import data from Excel, melt data frames into plottable format, add additional information to the data and plot it using ggplot.
 Depends:
     R (>= 2.15),  
     ggplot2,
@@ -13,16 +13,24 @@ Depends:
     plyr,
     psych,
     scales,
+    grid,
     gWidgets, 
-    RGtk2
-License: GPL (>= 2)
+    RGtk2,
+    xlsx
+License: GPL-2
 Collate:
-  'BaseGUI.R'
-  'DataFrameViewerGUI.R'
-  'DataFrame.R'
-  'GuiElementDataFrame.R'
+  'utils.R'
+  'dfv.R'
+  'BaseGui.R'
+  'DataFrameViewerGui.R'
+  'DataElement.R'
+  'GuiElement.R'
   'Module.R'
+  'ModalDialog.R'
   'SavePlotDialog.R'
+  'DataImportDialog.R'
+  'DataMeltDialog.R'
+  'DataInfoDialog.R'
   'GraphicsNotebookTab.R'
   'GraphicsNotebook.R'
-  'dfv.R'
+  'DataTable.R'

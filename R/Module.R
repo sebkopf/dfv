@@ -1,49 +1,44 @@
-#' A data frame that has a user interface associated with it.
+#' A module is a GuiElement that has a whole user interface associated with it.
 #' 
 #' \code{Module$new()} initiates the module.
 #' 
-#' @method showGUI shows the user interface (requires a Hub object, unless running in standalone mode)
+#' @method launch shows the user interface linked to this module
 Module <- setRefClass(
   'Module',
-  contains = 'DataFrame',
+  contains = 'GuiElement',
   fields = list(
-    gui = 'BaseGUI', # an S4 gui class
-    widgets = 'list' # list of all the widgets to keep track of
+    gui = 'BaseGui' # an S4 gui class
   ), 
   methods = list(
      initialize = function(...){
        callSuper(...)
-       gui@module <<- class(.self) # so the GUI knows which module it belongs to (for multi module GUIs)
+       
+       # so the Gui knows which module it belongs to (for multi module Guis)
+       gui@module <<- class(.self) 
        
        ### default setting for a module
        setSettings(
          windowSize = c(800, 600),
-         windowTitle = "Module"
+         windowTitle = "Module",
+         windowModal = FALSE,
+         protect = TRUE
        )
      },
     
-     getWidget = function(id) {
-       return (widgets[[id]])
+     #' Get module (flexibility for multi module Guis)
+     getModule = function(name = 'Module') {
+        return (.self) # standalone module always returns itself
      },
      
-     getWidgets = function(ids) {
-       if (missing(ids))
-         return (widgets)
-       return (widgets[ids])
+     #' Module make function
+     makeGui = function(...) {
+       showGui(gui, .self) # show module Gui
+       # Note: the loadGui() function is executed via the BaseGui through the focusHandler to enable data loading in modal dialogs
      },
      
-     setWidgets = function(...) {
-       # FIXME: allow both ... and list(a=b) to be passed in!
-       widgets <<- modifyList(widgets, list(...))
-     },
-     
-     cleanWidgets = function() {
-       widgets <<- list()
-     },
-    
-     #' Module launch function
-     launch = function(name) {
-       showGUI(gui, .self) # show module GUI
+     #' By default, Modal Dialog fetches data and settings from its GuiElements when saving the Gui
+     saveGui = function(fetchData = TRUE, fetchSettings = TRUE) {
+       callSuper(fetchData = fetchData, fetchSettings = fetchSettings)
      }
   )
 )
