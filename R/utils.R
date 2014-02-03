@@ -1,5 +1,5 @@
 #' Copies the variable to the clipboard
-#' For data frames, writes as table (with separator \t), everything else directly.
+#' For data frames, writes as table (with separator tab), everything else directly.
 copyToClipboard <- function(variable) {
   if (exists("writeClipboard")) # windows
     clipboard <- "clipboard"

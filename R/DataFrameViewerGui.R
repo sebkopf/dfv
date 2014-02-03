@@ -52,7 +52,7 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
   nav.actions <-
     list(## name, icon, label , accelerator , tooltip , callback
       list ("DFV" , NULL , "_DFV" , NULL , NULL , NULL ),
-      list ("Reload" , "gtk-refresh" ,"Reload Screen" , "<ctrl>R" , "This reloads the screen and recreates it from the last save.", function(...) { # FIXME: disable the keyboard shortcut! (enable code execution instead)
+      list ("Reload" , "gtk-refresh" ,"Reload Screen" , NULL, "This reloads the screen and recreates it from the last save.", function(...) { 
           destroyGui(gui, module)
           getModule(gui, module)$makeGui()
         }), 
@@ -209,7 +209,7 @@ refreshDataFrames <- function(module) {
   # check if there are new data frames and update data frames table and loaded data tabs if that's the case
   if (!is.null(module)) {
     dfTable <- module$getElements('dfTable')
-    if (!identical(getDataFrames(), (oldDFs <- dfTable$getTableData()))) {
+    if (!identical(getDataFrames(), (oldDFs <- dfTable$getTableData(drop = FALSE)))) {
       dmsg("changed data frames detected, updating table")
       showInfo(module$gui, module, msg="Changed data frames detected, updating tables ...", timer = 2, okButton = FALSE)
       # update data frames tables
@@ -301,7 +301,7 @@ generateCode.ggplot <- function(module) {
 #' Generate the code for a multiplot of a single column
 generateCode.singleColumnMultiplot <- function(module, column) {
   if (!is.null(module)) {
-    df.name <- module$getWidgetValue('df')
+    df.name <- module$getElements('dfTable')$getSelectedValues('Name')
     module$loadWidgets(code = paste0(
       "\n# Generate jitter, boxplot and violin plot of column '", column, "' in data frame '", df.name, "'\n",
       "p.jitter <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_jitter() + coord_flip() + theme_bw() + labs(x='Jitter', y='", column, "')\n",
@@ -332,60 +332,6 @@ runCode <- function(module) {
   # try to run plot generation
   tryCatch(eval(parse(text = code)), error = errorFun, warning = errorFun)
   showInfo(module$gui, module, msg=paste0("Code successfully run"), timer = 2, okButton = FALSE)
-}
-
-
-# excecute code
-DFV.execCode<-function(dfv) {
-  code=svalue(dfv$plotParams$code)
-  errorFun<-function(e) {
-    svalue(dfv$plotParams$errorMsg)<-strwrap(paste(c("ERROR", capture.output(print(e))), sep=""))
-    pn.setSelectedPlotTabParam(dfv$pn, list(plotParams=widgets.getValuesAsDF(dfv$plotParams))) # save plot parameters
-    stop(e)
-  }
-  
-  if ( length(grep("^(\\s)*[gq]*plot\\(", code)) > 0) { # it's a plotting command, try to print plot
-    tryCatch( (p<-eval(parse(text=code))),   # try to generate plot
-              error = errorFun)
-    tryCatch(print(p), error=errorFun)
-    pn.setSelectedPlotTabParam(dfv$pn, list(plot=p)) # save plot
-    svalue(dfv$plotParams$errorMsg)<-paste("INFO: Plot succesfuly generated.", sep="")
-  } else  {# regular code
-    tryCatch( eval(parse(text=code), envir=.GlobalEnv),  # just execute code
-              error = errorFun)
-    svalue(dfv$plotParams$errorMsg)<-paste("INFO: Command(s) successfully executed.", sep="")
-  }
-  pn.setSelectedPlotTabParam(dfv$pn, list(plotParams=widgets.getValuesAsDF(dfv$plotParams))) # save plot parameters
-}
-
-
-
-DFV.compileGGPlot<-function(dfv) {
-  emptyS<-"<Drag&Drop here>"
-  code<-paste("ggplot(",
-              (df<-svalue(dfv$plotParams$df)), 
-              ",\n aes(x=", (x<-svalue(dfv$plotParams$x)), ", y=", (y<-svalue(dfv$plotParams$y)), sep="")
-  # color (does both color and fill)
-  if ((color<-svalue(dfv$plotParams$color)) != emptyS)
-    code<-paste(code, ", fill=", color, "", sep="")
-  # shape
-  if ((shape<-svalue(dfv$plotParams$shape)) != emptyS)
-    code<-paste(code, ", shape=", shape, "", sep="")
-  
-  code<-paste(code, ")) + \ngeom_point(colour='black', size=5", sep="") # not runnin geom_line, it's more nuisance
-  if (color!= emptyS && shape==emptyS)
-    code<-paste(code,", shape=21", sep="")
-  code<-paste(code, ") + \ntheme_bw() + labs(title='", 
-              df, "', x='", x, "', y='", y, "')", sep="")
-  if (shape!=emptyS)
-    code<-paste(code, "+ \nscale_shape_manual(values=c(21,22,24,25,23))", sep="")
-  
-  # wrap (really grid but that's harder)
-  if ((wrap<-svalue(dfv$plotParams$grid)) != emptyS)
-    code<-paste(code, " + \nfacet_wrap(~", wrap, ")", sep="")
-  
-  svalue(dfv$plotParams$code)<-code
-  DFV.execCode(dfv)
 }
 
 #################

@@ -55,7 +55,7 @@ setMethod("initialize", "BaseGui", function(.Object, ...) {
 ###################
 
 setMethod("makeGui", "BaseGui", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am making my Gui.\n")
+  dmsg("I am a", class(gui), "and have module", gui@module, "and I am making my Gui.\n")
   options("guiToolkit"="RGtk2") # everything is written in RGtk2
   
   # make window
@@ -105,7 +105,7 @@ setMethod("makeGui", "BaseGui", function(gui, module) {
 })
 
 setMethod("destroyGui", "BaseGui", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am destroying my Gui.\n")
+  dmsg("I am a", class(gui), "and have module", gui@module, "and I am destroying my Gui.\n")
   dispose(getWindow(gui, module)) # destroy window
   getModule(gui, module)$destroyGui() # clean all widget references
 })
@@ -113,12 +113,12 @@ setMethod("destroyGui", "BaseGui", function(gui, module) {
 setMethod("showGui", "BaseGui", function(gui, module) {
   if (is.null(getWindow(gui, module)))
     makeGui(gui, module)
-  cat("I am a", class(gui), "and have module", gui@module, "and I am showing my Gui now.\n")
+  dmsg("I am a", class(gui), "and have module", gui@module, "and I am showing my Gui now.\n")
   visible(getWindow(gui, module), TRUE)
 })
 
 setMethod("hideGui", "BaseGui", function(gui, module) {
-  cat("I am a", class(gui), "and have module", gui@module, "and I am hiding my Gui.\n")
+  dmsg("I am a", class(gui), "and have module", gui@module, "and I am hiding my Gui.\n")
   if (!is.null(getWindow(gui, module)))
     visible(getWindow(gui, module), FALSE)
 })
@@ -142,13 +142,13 @@ setMethod("getNavigationXML", "BaseGui", function(gui, module) {
 setMethod("makeNavigation", "BaseGui", function(gui, module) {
   
   # navigation actions
-  cat("\tInitializing Navigation.\n")
+  dmsg("\tInitializing Navigation.\n")
   setWidgets(gui, module, actionGroup = gtkActionGroup ("FileGroup"))
-  cat("\tSetting Navigation Actions.\n")
+  dmsg("\tSetting Navigation Actions.\n")
   setNavigationActions(gui, module, getWidgets(gui, module, 'actionGroup'))
   
   # UI manager for navigation
-  cat("\tMaking Navigation Manager.\n")
+  dmsg("\tMaking Navigation Manager.\n")
   uimanager <- gtkUIManagerNew() # ui manager
   uimanager$insertActionGroup (getWidgets(gui, module, 'actionGroup'), 0) # add actions
   uimanager$addUiFromString (getNavigationXML(gui, module)) # add ui 
@@ -156,7 +156,7 @@ setMethod("makeNavigation", "BaseGui", function(gui, module) {
   # menu
   menuGrp <- getWidgets(gui, module, 'menuGroup')
   if (!is.null(menuGrp)) {
-    cat("\tMaking Menubar.\n")
+    dmsg("\tMaking Menubar.\n")
     getToolkitWidget(menuGrp)$packStart (uimanager$getWidget ("/menubar"), FALSE ) # add menu
   }
     
@@ -164,7 +164,7 @@ setMethod("makeNavigation", "BaseGui", function(gui, module) {
   toolbarGrp <- getWidgets(gui, module, 'toolbarGroup')
   if (!is.null(toolbarGrp)) {
     getToolkitWidget(toolbarGrp)$packStart (uimanager$getWidget ( "/toolbar" ), TRUE) # add toolbar
-    cat("\tMaking Toolbar.\n")
+    dmsg("\tMaking Toolbar.\n")
   }
   getToolkitWidget(getWindow(gui, module))$addAccelGroup (uimanager$getAccelGroup()) # add keyboard triggers
   
@@ -190,7 +190,7 @@ setMethod("makeInfoBar", "BaseGui", function(gui, module){
 #' timer - time in seconds until message disappears automatically
 #' okButton - whether there is an ok button or not
 setMethod("showInfo", "BaseGui", function(gui, module, msg, type="question", timer=2, okButton=TRUE) {
-  cat("\tShowing info message for", timer, "seconds.\n")
+  dmsg("\tShowing info message for", timer, "seconds.\n")
   getWidgets(gui, module, 'infoBar')$setMessageType(type)
   getWidgets(gui, module, 'infoLabel')$setText(msg)
   getWidgets(gui, module, 'infoBar')$show()
@@ -206,7 +206,7 @@ setMethod("showInfo", "BaseGui", function(gui, module, msg, type="question", tim
 
 # hide info bar
 setMethod("hideInfo", "BaseGui", function(gui, module) {
-  cat("\tHiding info message.\n")
+  dmsg("\tHiding info message.\n")
   getWidgets(gui, module, 'infoBar')$hide()
 })
 

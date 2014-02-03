@@ -1,11 +1,24 @@
-# ' Launch data frame viewer user interface.
-# ' @param wsVariable - the name of the global variable to use when "saving workspace" from the Gui
-# ' @param storeModule - [optional] the name of the variable to save the module in for direct manipulation of the Gui
-# ' @param modal - [default: FALSE] - whether to start window in active or modal mode (latter can be used in command line script)
-# ' @export
-dfv <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE) {
+#' Launch the data frame viewer (DFV) user interface.
+#' @param wsVariable the name of the global variable to use when running "Save DFV" from the Gui 
+#' @param storeModule the name of a variable (e.g. \code{dfv.obj}) that, if set, will be assigned the dfv gui object for command line manipulation
+#' @param modal whether to start window in active or modal mode (latter can be useful in command line script for example), default \code{FALSE}
+#' @param silent whether to be silent about information (set to \code{FALSE} for helpful debug messages), default \code{TRUE}
+#' @export
+#' @examples
+#' \dontrun{dfv.start() # should work out of the box like this for most applications}
+dfv.start <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE, silent = TRUE) {
   # set Gui options
   options("guiToolkit"="RGtk2") # everything is written in RGtk2
+  
+  # messages
+  DEBUG <<- !silent
+  
+  # generate test data frame
+  dfv.test.df <<- data.frame(
+    ID=1:500,
+    x=rnorm(n=500, m=3, sd=1), 
+    y=rnorm(n=500, m=3, sd=1),
+    info=c("Banjo", "Turtle", "Jetpack", "Ferret", "Pizza"))
   
   # initialize new module for a data container bound to the Gui
   module <- Module$new(gui = DataFrameViewerGui())
@@ -16,7 +29,7 @@ dfv <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE) {
     windowSize = c(1024, 720),
     windowTitle = paste("Data Frame Viewer version", packageVersion('dfv')),
     windowModal = modal,
-    lrPane = 0.2, # left-right pane
+    lrPane = 0.4, # left-right pane
     rtbPane = 0.8, # top-bottom pane on the left
     ltbPane = 0.5 # top-bottom pane on the right
   )
@@ -37,22 +50,13 @@ dfv <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALSE) {
   module$makeGui()
 }
 
-# ' Development launch, stores the module in object dfv_test
-# ' (if you need to access the gui, it will be in dfv_test$gui)
+#' Development launch, stores the module in object \code{dfv_test} and has debug messages turned on.
 dfv.dev <- function() {
-  dfv(storeModule = 'dfv_test')
+  dfv.start(storeModule = 'dfv_test', silent = FALSE)
 }
 
-# ' Debug message function
-DEBUG <- TRUE
+#' Debug message function
 dmsg <- function(...) {
-  if (DEBUG)
+  if (exists('DEBUG') && DEBUG == TRUE)
     message(list(...))
 }
-
-# Test data frame
-dfv.test.df <- data.frame(
-  ID=1:500,
-  x=rnorm(n=500, m=3, sd=1), 
-  y=rnorm(n=500, m=3, sd=1),
-  info=c("Banjo", "Turtle", "Jetpack", "Ferret", "Pizza"))
