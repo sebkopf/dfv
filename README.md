@@ -55,7 +55,7 @@ install.packages('xlsx', depen=T) # for reading excel files
 Install the latest version of the Data Frame Viewer directly from GitHub by running the following code:
 ```R
 library(devtools)
-install_github('dfv', 'sebkopf', ref = 'dev')
+install_github('dfv', 'sebkopf', ref = 'master')
 ```
 
 ###Run dfv
