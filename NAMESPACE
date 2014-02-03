@@ -1,2 +1,2 @@
 export(dfv.start, dfv.dev)
-#exportPattern("^[^\\.]")
+exportPattern("^[^\\.]")
