@@ -79,10 +79,10 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
           getElements(gui, module, "infoDialog")$saveGui()
       } ),
       list ("Code", NULL , "_Code" , NULL, NULL, NULL),
-      list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { dmsg("run") } ),
-      list ("Snippets", "gtk-find-and-replace", "Code Snippets", NULL, "Save/load code snippets", function(...) { gmessage("Sorry, not implemented yet.") } ),
+      list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { runCode(getModule(gui, module)) } ),
+#      list ("Snippets", "gtk-find-and-replace", "Code Snippets", NULL, "Save/load code snippets", function(...) { gmessage("Sorry, not implemented yet.") } ),
       list ("Plots", NULL , "_Plots" , NULL, NULL, NULL),
-      list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab() } ),
+      list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab(activate = TRUE) } ),
       list ("ClosePlotTab", gn$icons$CLOSE.TAB, "Close plot", "<ctrl>X", NULL, function(...) { gn$closePlotTab() } ),
       list ("SavePlot", gn$icons$SAVE.PLOT, "Save plot", "<ctrl>S", NULL, function(...) { 
         if (gn$savePlot())
@@ -100,7 +100,8 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
   actionGrp$addActions(nav.actions)
 })
 
-setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
+setMethod("makeMainGui", "DataFrameViewerGui", 
+function(gui, module) {
   ### top level groups
   setMenuGroup(gui, module, ggroup(horizontal=FALSE, cont=getWinGroup(gui, module), spacing=0))
   setToolbarGroup(gui, module, ggroup(horizontal=TRUE, cont=getWinGroup(gui, module), spacing=0, expand=FALSE))
@@ -129,47 +130,63 @@ setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
   dfTable$setData(frame = getDataFrames())
   dfTable$makeGui(dfs.frame, selectionHandler = function(...) loadDataFrame(getModule(gui, module)))
   
-  dfv <- list()
+  ### plot constructor
+  code.frame <- gframe("Plot Constructor", horizontal=FALSE, cont=left.tgrp)
+  gtkFrame <- getToolkitWidget(code.frame)
+  gtkFrame['border-width'] <- 5
+  code.grp <- glayout(container = code.frame, spacing=10); i <- 0
+  code.fields <- c("df", "x", "y", "color", "shape", "grid")
   
+  # create 'labels'
+  labels <- sapply(code.fields, function(x, grp) {
+    b <- gbutton(action = gaction(paste0(x, ":"), tooltip = "Click to generate code", handler = function(...) { generateCode.ggplot(getModule(gui, module)) }), cont = grp)
+    gtkButton <- getToolkitWidget(b)
+    gtkButton['relief'] <- 'none' # change button relief
+    list(b)
+  }, grp = code.grp)
   
-  #dfs.frame<-gframe("Available Data Frames", cont=left.tgrp, horizontal=FALSE)
-  #size(dfs.frame)<-c(50, 200)
-#  dfv$dfs.table<-gtable(DFV.getDataFrames(), cont=dfs.frame, expand=TRUE)
-#  dfs.refresh<-gbutton(action=gaction("Refresh", icon="gtk-execute", handler=function(h,...) DFV.refreshDataFramesTable(dfv)), cont=(dfbuttons.grp<-ggroup(cont=dfs.frame)))
-#  gbutton(action=gaction("Paste From\nExcel", icon="gtk-paste", handler=function(h,...) DFV.paste(dfv)), cont=dfbuttons.grp)
-#  gbutton(action=gaction("Import CSV\nFile", icon="gtk-convert", handler=function(h,...) gmessage("Not implemented yet.", cont=dfv$win)), cont=dfbuttons.grp)
-  code.frame<-gframe("Plot Constructor", horizontal=TRUE, cont=left.tgrp)
-  code.leftgrp<-ggroup(cont=code.frame)
-  code.grp<-glayout(container=code.leftgrp, spacing=10, expand=TRUE)
-  code.grp[(i<-1),1]<-"df:"
-  code.grp[i,2]<-(df.name <- glabel("", cont=code.grp, width=10))
-  code.grp[(i<-i+1),1]<-"x:"
-  code.grp[i,2]<-(dfv$plotParams$x<-glabel("", cont=code.grp, width=10))
-  code.grp[(i<-i+1),1]<-"y:"
-  code.grp[i,2]<-(dfv$plotParams$y<-glabel("", cont=code.grp, width=10))
-  code.grp[(i<-i+1),1]<-"color:"
-  code.grp[i,2]<-(dfv$plotParams$color<-glabel("", cont=code.grp, width=10))
-  code.grp[(i<-i+1),1]<-"shape:"
-  code.grp[i,2]<-(dfv$plotParams$shape<-glabel("", cont=code.grp, width=10))
-  code.grp[(i<-i+1),1]<-"grid:"
-  code.grp[i,2]<-(dfv$plotParams$grid<-glabel("", cont=code.grp, width=10))
-
-  setWidgets(gui, module, df.name = df.name)
-
-#  code.grp[(i<-i+1),1]<-gbutton(action=gaction("Clear", icon="gtk-clear", handler=function(h,...) DFV.clearPlotParams(dfv)), cont=code.grp)
-#  code.grp[i, 2]<-gbutton(action=gaction("Create\nCode", icon="gtk-execute", handler=function(h,...) DFV.compileGGPlot(dfv)), cont=code.grp)
-  #code.rightgrp<-ggroup(cont=code.frame, horizontal=FALSE, expand=TRUE)
+  # create 'values'
+  droptargets <- sapply(code.fields, function (x, grp) {
+    if (x == 'df') { # df
+      b <- gbutton(action = 
+            gaction("<Click to set>", tooltip = "Click to set to currently selected data frame. Click again to reset.", 
+                    handler = function (...) svalue(b) <- getElements(gui, module, 'dfTable')$getSelectedValues('Name')), width=10, cont = grp)
+    } else { # all other plot parameters
+      b <- gbutton(action = 
+            gaction("<Drop here>", tooltip = "Drag table tabs/columns here. Click to reset.", 
+                    handler = function (...) svalue(b) <- "<Drop here>"), width=10, cont = grp)
+      adddroptarget(b, targetType="object", handler = function(h, ...) svalue(h$obj) <- gWidgets::id(h$dropdata)) 
+    }
+    gtkButton <- getToolkitWidget(b)
+    gtkButton['relief'] <- 'none' # change button relief
+    list(b)
+  }, grp = code.grp)
   
-  #gbutton(action=gaction("Run", icon="plot", tooltip="Press CTRL+R to execute code.", handler=function(h,...) DFV.execCode(dfv) ), cont=code.rightgrp.top)  
+  # put it all into the layout
+  for (field in code.fields) {
+    code.grp[(i %% 3) + 1, floor(i/3)*2 + 1] <- labels[[field]]
+    code.grp[(i %% 3) + 1, floor(i/3)*2 + 2] <- droptargets[[field]]
+    i <- i + 1
+  }
+  
+  # set widget
+  setWidgets(gui, module, droptargets)
 
   ### Data Table
   df.frame <- gframe("Data", horizontal=FALSE, cont=left.bgrp, expand = TRUE)
   setWidgets(gui, module, dataNb = gnotebook(container = df.frame, expand=TRUE))  
-
+  
   ### Graphics Notebook
   plot.grp <- gframe("Plots", cont=right.tgrp, expand=TRUE, horizontal=FALSE)
-  tab <- GraphicsNotebookTab$new()
-  tab$setSettings(editablePlotLabel = TRUE)
+  tab <- GraphicsNotebookTab$new() # default tab
+  tab$setSettings(
+    editablePlotLabel = TRUE,
+    showHandler = function(tab) getModule(gui, module)$loadWidgets(tab$getData()), # load widgets from tab into the main GUI
+    droptargetHandler = function(h,...) {
+      if (!is.null(h$dropdata) && !is.null(column <- gWidgets::id(h$dropdata))) 
+        generateCode.singleColumnMultiplot(getModule(gui, module), column)
+      })
+  tab$setData(code = '')
   gn <- GraphicsNotebook$new(tab = tab)
   setElements(gui, module, gn = gn)
   gn$makeGui(parent = plot.grp)
@@ -177,21 +194,6 @@ setMethod("makeMainGui", "DataFrameViewerGui", function(gui, module) {
   ### Code
   code.grp <- gframe("Code", expand=TRUE, horizontal = FALSE, cont=right.bgrp)
   setWidgets(gui, module, code = gtext('', wrap=TRUE, font.attr = c(style="normal", weights="bold",sizes="medium"), container = code.grp, expand = TRUE, height=50))
-
-  
-  # handlers
-#  addHandlerChanged(dfv$df.nb, handler=function(h,...) svalue(dfv$plotParams$df)<-names(h$obj)[h$pageno])
-#  addHandlerClicked(dfv$dfs.table, handler=function(h,...) DFV.selectDataFrame(dfv))
-#  addHandlerKeystroke(dfv$plotParams$code, handler=function(h,...) if (h$key=="\022") DFV.execCode(dfv) )
-  
-#  for (var in names(dfv$plotParams))
-#    adddroptarget(dfv$plotParams[[var]], targetType="object", handler=
-#                    function(h,...) svalue(h$obj)<-gWidgets::id(h$dropdata)) 
-  
-  # load
-#  DFV.clearPlotParams(dfv)
-  
-  
 })
 
 ###################
@@ -234,7 +236,6 @@ loadDataFrame <- function(module) {
   df.name <- module$getElements('dfTable')$getSelectedValues('Name')
   if (!is.null(df.name)) {
     df <- get(df.name, env=.GlobalEnv)
-    module$loadWidgets(df.name = df.name)
     if (is.na(select<-(which(names(module$getWidgets('dataNb')) == df.name)[1]))) 
       gdf(df, cont = module$getWidgets('dataNb'), expand=TRUE, label = df.name) # make new data table
     else
@@ -242,11 +243,97 @@ loadDataFrame <- function(module) {
   }
 }
 
-# clear code parameters
-DFV.clearPlotParams<-function(dfv) {
-  for (var in c("x", "y", "color", "shape", "grid"))
-    svalue(dfv$plotParams[[var]])<-"<Drag&Drop here>"
+#' Generate the code for the ggplot
+generateCode.ggplot <- function(module) {
+  if (!is.null(module)) {
+    if (is.null(module$getElements('gn')$getActiveTab())) 
+        module$getElements('gn')$newPlotTab(select = TRUE, activate = FALSE) # make a plot tab if none exists
+    tab <- module$getElements('gn')$getActiveTab()
+    plotParams <- module$getWidgetValues(c('df', 'x', 'y', 'color', 'shape', 'grid'))
+    tab$setData(plotParams) # store plot parameters in the plot tab
+
+    # empty string
+    emptyS<-"<Drop here>"
+    
+    # ggplot main
+    code <- paste0(
+      "\n#Generate ggplot\n",
+      "p <- ggplot(", plotParams$df, 
+      ",\n\taes(x = ", sub(emptyS, "", plotParams$x), ", y = ", sub(emptyS, "", plotParams$y))
+    
+    # color (does both color and fill)
+    if (plotParams$color != emptyS)
+      code <- paste0(code, ", fill = ", plotParams$color)
+    
+    # shape
+    if (plotParams$shape != emptyS)
+      code <- paste0(code, ", shape = ", plotParams$shape)
+    
+    code <- paste0(code, ")) + \n\t",
+        "geom_point(colour = 'black', size = 5") # not runnin geom_line, it's more nuisance
+    
+    # fix shape for color defined but shape not
+    if (plotParams$color!= emptyS && plotParams$shape==emptyS)
+      code <- paste0(code,", shape = 21")
+    code <- paste0(code, ")")
+    
+    # shape scale if shape is defined
+    if (plotParams$shape!=emptyS)
+      code <- paste0(code, " + \n\tscale_shape_manual(values=c(21,22,24,25,23))")
+    
+    # theme and title
+    code <- paste0(code, " + \n\ttheme_bw() + \n\tlabs(title = '", 
+                   plotParams$df, "', x = '", plotParams$x, "', y = '", plotParams$y, "')")
+    
+    # wrap (really grid but that's harder)
+    if (plotParams$grid != emptyS)
+      code <- paste0(code, " + \n\tfacet_wrap(~", plotParams$grid, ")")
+    
+    # print out
+    code <- paste0(code, "\n\n#Render plot\nprint(p)")
+    
+    # set code and run it
+    module$loadWidgets(code = code)
+    runCode(module)
+  }
 }
+
+#' Generate the code for a multiplot of a single column
+generateCode.singleColumnMultiplot <- function(module, column) {
+  if (!is.null(module)) {
+    df.name <- module$getWidgetValue('df')
+    module$loadWidgets(code = paste0(
+      "\n# Generate jitter, boxplot and violin plot of column '", column, "' in data frame '", df.name, "'\n",
+      "p.jitter <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_jitter() + coord_flip() + theme_bw() + labs(x='Jitter', y='", column, "')\n",
+      "p.box <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_boxplot() + coord_flip() + theme_bw() + labs(x='Boxplot', y='", column, "')\n",
+      "p.violin <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_violin(trim=FALSE) + theme_bw() + coord_flip() + labs(x='Violin', y='", column, "')\n",
+      "\n# Combine plots",
+      "grid.newpage()\n",
+      "pushViewport(viewport(layout = grid.layout(3, 1)))\n",
+      "print(p.jitter, vp = viewport(layout.pos.row = 1, layout.pos.col = 1))\n",
+      "print(p.box, vp = viewport(layout.pos.row = 2, layout.pos.col = 1))\n",
+      "print(p.violin, vp = viewport(layout.pos.row = 3, layout.pos.col = 1))\n"))
+    runCode(module)
+  }
+}
+
+#' Run the code that is in the code field
+runCode <- function(module) {
+  code <- module$getWidgetValue('code')
+  tab <- module$getElements('gn')$getActiveTab()
+  tab$setData(code = code) # store code in tab
+  
+  # error function when there is trouble with the code
+  errorFun<-function(e) {
+    showInfo(module$gui, module, msg=paste0("ERROR: There are problems running this code.\n", capture.output(print(e))), type="error", timer=NULL, okButton = TRUE) 
+    stop(e)
+  }
+  
+  # try to run plot generation
+  tryCatch(eval(parse(text = code)), error = errorFun, warning = errorFun)
+  showInfo(module$gui, module, msg=paste0("Code successfully run"), timer = 2, okButton = FALSE)
+}
+
 
 # excecute code
 DFV.execCode<-function(dfv) {
@@ -271,17 +358,7 @@ DFV.execCode<-function(dfv) {
   pn.setSelectedPlotTabParam(dfv$pn, list(plotParams=widgets.getValuesAsDF(dfv$plotParams))) # save plot parameters
 }
 
-DFV.compileSingleDataPlot<-function(dfv, varName, dfName=NULL) {
-  if (is.null(dfName))
-    dfName<-svalue(dfv$plotParams$df)
-  svalue(dfv$plotParams$code)<-paste(
-    "multiplot(\n",
-    "ggplot(", dfName, ", aes('', ", varName, ")) + geom_jitter() + coord_flip() + theme_bw() + labs(x='Jitter', y='", varName, "'),\n",
-    "ggplot(", dfName, ", aes('', ", varName, ")) + geom_boxplot() + coord_flip() + theme_bw() + labs(x='Boxplot', y='", varName, "'),\n",
-    "ggplot(", dfName, ", aes('', ", varName, ")) + geom_violin(trim=FALSE) + theme_bw() + coord_flip() + labs(x='Violin', y='", varName, "')\n",
-    ")", sep="")
-  DFV.execCode(dfv)
-}
+
 
 DFV.compileGGPlot<-function(dfv) {
   emptyS<-"<Drag&Drop here>"

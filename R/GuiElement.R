@@ -118,14 +118,20 @@ GuiElement <- setRefClass(
     
     # '@Param: value - if missing, take value from the field of the same id stored in $settings or $data (settings takes precedence)
     loadWidget = function(id, value) {
+      # check if widget is set
+      if (is.null(widgets[[id]])) {
+        dmsg("trying to load widget '", id, "' but widget does not exist") 
+        return(NULL)
+      }
+      
       # check if value is supplied or availabe in the data
       if (missing(value)) {
         if (is.null(value <- settings[[id]]) && is.null(value <- data[[id]])) { # settings first, then data
-          message("WARNING: trying to load widget", id, "but no value supplied and no corresponding settings or data field found in this GuiElement")
+          message("WARNING: trying to load widget '", id, "' but no value supplied and no corresponding settings or data field found in this GuiElement")
           return(NULL)
         } 
       } else if (is.null(value)) {
-        dmsg("trying to load widget", id, "but value supplied is NULL --> skip") #FIXME?
+        dmsg("trying to load widget '", id, "' but value supplied is NULL --> skip") #FIXME?
         return(NULL)
       }
       

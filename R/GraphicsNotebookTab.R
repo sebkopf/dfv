@@ -6,7 +6,7 @@ GraphicsNotebookTab <- setRefClass(
   'GraphicsNotebookTab',
   contains = 'GuiElement', 
   fields = list(
-    handlers = 'list' # handlers that the gui element needs to keep track of
+    handlers = 'list' # handler IDs that the gui element needs to keep track of
   ),
   methods = list(
     initialize = function(...) {
@@ -14,15 +14,14 @@ GraphicsNotebookTab <- setRefClass(
   
       ### default settings for a tab
       setSettings(
-        editablePlotLabel = FALSE,
-        plotHandlers = list(
-            droptarget = FALSE,
-            clicked = FALSE,
-            changed = FALSE,
-            rightclick = FALSE,
-            mousemotion = FALSE,
-            rightclickmenu = FALSE
-          ),
+        editablePlotLabel = FALSE, # whether the label has a text box for editing it
+        showHandler = NULL, # handler for special events when the tab is shown
+        droptargetHandler = NULL, # graphics device droptarget handler
+        clickedHandler = NULL, # graphics device clicked handler
+        changedHandler = NULL, # graphics device changed handler
+        rightclickHandler = NULL, # graphics device right click handler
+        mousemotionHandler = NULL, # graphics device mousemotion handler
+        rightclickmenuHandler = NULL, # graphics deivce right click menu handler
         protect = TRUE # these are not overwritten by settings autoload
       )
     },
@@ -50,18 +49,27 @@ GraphicsNotebookTab <- setRefClass(
       
       blockHandler(obj = widgets$gg) # disable automatic 2nd mouse button popup handler (for save and copy)
       # event handlers
-      if (getSettings('plotHandlers')$droptarget)
-        handlers$droptarget <<- adddroptarget(widgets$gg, targetType="object", handler = function(...) droptargetHandler(...))
-      if (getSettings('plotHandlers')$clicked)
-        handlers$clicked <<- addHandlerClicked(widgets$gg, handler = function(...) clickedHandler(...))
-      if (getSettings('plotHandlers')$changed)
-        handlers$changed <<- addHandlerChanged(widgets$gg, handler = function(...) changedHandler(...))
-      if (getSettings('plotHandlers')$rightclick)
-        handlers$rightclick <<- addHandlerRightclick(widgets$gg, handler = function(...) rightclickHandler(...))
-      if (getSettings('plotHandlers')$mousemotion)
-        handlers$mousemotion <<- addHandlerMouseMotion(widgets$gg, handler = function(...) mousemotionHandler(...))
-      if (getSettings('plotHandlers')$rightclickmenu)
-        handlers$rightclickmenu <<- add3rdMousePopupmenu(obj = widgets$gg, menulist = function(...) rightclickmenuHandler(...))
+      if (!is.null(settings$droptargetHandler))
+        handlers$droptarget <<- adddroptarget(widgets$gg, targetType="object", handler = settings$droptargetHandler)
+      if (!is.null(settings$clickedHandler))
+        handlers$clicked <<- addHandlerClicked(widgets$gg, handler = settings$clickedHandler)
+      if (!is.null(settings$changedHandler))
+        handlers$changed <<- addHandlerChanged(widgets$gg, handler = settings$changedHandler)
+      if (!is.null(settings$rightlickHandler))
+        handlers$rightclick <<- addHandlerRightclick(widgets$gg, handler = settings$rightlickHandler)
+      if (!is.null(settings$mousemotionHandler))
+        handlers$mousemotion <<- addHandlerMouseMotion(widgets$gg, handler = settings$mousemotionHandler)
+      if (!is.null(settings$rightclickmenuHandler))
+        handlers$rightclickmenu <<- add3rdMousePopupmenu(obj = widgets$gg, menulist = settings$rightclickmenuHandler)
+    },
+    
+    #' Methods that is activated
+    #' - activates the graphics device
+    #' - runs the showHandler (if set) and passes itself to it as argument tab
+    activateTab = function() {
+      activateGraphicsDevice()
+      if (!is.null(settings$showHandler))
+        do.call(settings$showHandler, args = list(tab = .self))
     },
     
     # activate graphics device in this plot

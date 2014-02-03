@@ -49,9 +49,9 @@ GraphicsNotebook <- setRefClass(
     },
     
     # 'Creates the standard tab by default
-    # '@param select - determines whether the selectPlotTab method will be executed after tab creation 
-    # '(widgets on the tab  that have settings or data keys associated with them will still be filled automatically if the parents $loadWidgets is executed)
-    newPlotTab = function(tabID, newTab = tab$copy(), select = TRUE) {
+    #'@param select - determines whether the tab will be selected after tab creation (default=TRUE, FALSE is used when tabs are recreated during makeGui)
+    #'@param activate - determines whether the tab will be activated (e.g. its showHandler executed) after tab creation (default=TRUE)
+    newPlotTab = function(tabID, newTab = tab$copy(), select = TRUE, activate = TRUE) {
       # block handlers
       blockHandler(widgets$nb, handlers$nb.changedHandler)
 
@@ -77,7 +77,7 @@ GraphicsNotebook <- setRefClass(
       
       # select plot tab
       if (select)
-        selectPlotTab(getWidgetValue('nb'))
+        selectPlotTab(getWidgetValue('nb'), activate = TRUE)
     },
 
     # 'Close active tab
@@ -97,7 +97,7 @@ GraphicsNotebook <- setRefClass(
     },
     
     # 'Selects and loads the plot tab indetified by index
-    selectPlotTab = function(index) {
+    selectPlotTab = function(index, activate = TRUE) {
       if (index > 0 && index <= length(widgets$nb)) { # check for legal indices
         dmsg("Selecting GraphicsNotebook tab index ", index, ", TABID ", data$tabIDs[index])
         
@@ -107,17 +107,16 @@ GraphicsNotebook <- setRefClass(
         loadWidgets('nb')
         unblockHandler(widgets$nb, handlers$nb.changedHandler)
         
-        # load
-        loadPlotTab()
+        # activate plot tab
+        if (activate)
+          activatePlotTab()
       }
     },
     
     #' load plot tab (always loads activate tab)
-    loadPlotTab = function() {
+    activatePlotTab = function() {
       dmsg("\tLoading active tab with Tab ID ", data$tabIDs[data$nb])
-      
-      # activate the tabs plot
-      activateGraphicsDevice()
+      getActiveTab()$activateTab()
     },
     
     #' save active plot (ask for dimension info first)
@@ -134,6 +133,7 @@ GraphicsNotebook <- setRefClass(
           
         getElements("savePlotDialog")$makeGui() # this is a modal dialog so method will not continue until it is done
         if ( elements$savePlotDialog$dialogSaved() ) { # check if modal dialog was saved
+          getElements("savePlotDialog")$saveGui()
           if (!saveAll) {
             filepath <- file.path(elements$savePlotDialog$data$plotsPath, paste0(elements$savePlotDialog$data$filename, ".pdf"))
             dmsg("Saving active plot to file ", filepath)
@@ -345,3 +345,28 @@ pn.getAllInfo<-function(pn) return(pn.getSelectedPlotTabParam(pn, params="plotin
 
 # utility function for retrieving parts of the user information from the current tab
 pn.getInfo<-function(pn, fields) return(pn.getAllInfo(pn)[fields])
+
+
+# test <- function(obj){
+#   b <- 'no'
+#   obj3 <- obj$copy()
+#   do.call(obj3$fun, args = list())
+# }
+# 
+# test2 <- function() {
+#   b <- 'test'
+#   
+#   Myobject <- setRefClass(
+#     'Myobject',
+#     fields = list(
+#       fun = 'function' # handlers that the gui element needs to keep track of
+#     ))
+#   
+#   obj <- Myobject$new()
+#   obj$fun <- function() print(b)
+#   
+#   test(obj)
+# }
+# 
+# test2()
+
