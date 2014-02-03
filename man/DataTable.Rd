@@ -1,0 +1,20 @@
+\name{DataTable}
+\alias{DataTable}
+\title{Class implementing a data table as a GuiElement
+Usage:
+Define settings after initializing the class
+Load data frame when makingGui
+ - the entire data frame will be displayed in the table but you can adjust the visibility afterwards to hide unwanted columns (or adjust the data frame before hand)
+ - changing the order of the columns is not currently supported by the underlying model, instead just have the data frame in the right order when you pass it in}
+\description{
+  Class implementing a data table as a GuiElement Usage:
+  Define settings after initializing the class Load data
+  frame when makingGui - the entire data frame will be
+  displayed in the table but you can adjust the visibility
+  afterwards to hide unwanted columns (or adjust the data
+  frame before hand) - changing the order of the columns is
+  not currently supported by the underlying model, instead
+  just have the data frame in the right order when you pass
+  it in
+}
+

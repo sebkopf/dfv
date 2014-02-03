@@ -1,0 +1,30 @@
+\name{dfv.start}
+\alias{dfv.start}
+\title{Launch the data frame viewer (DFV) user interface.}
+\usage{
+  dfv.start(wsVariable = "dfv_saved", storeModule = NULL,
+    modal = FALSE, silent = TRUE)
+}
+\arguments{
+  \item{wsVariable}{the name of the global variable to use
+  when running "Save DFV" from the Gui}
+
+  \item{storeModule}{the name of a variable (e.g.
+  \code{dfv.obj}) that, if set, will be assigned the dfv
+  gui object for command line manipulation}
+
+  \item{modal}{whether to start window in active or modal
+  mode (latter can be useful in command line script for
+  example), default \code{FALSE}}
+
+  \item{silent}{whether to be silent about information (set
+  to \code{FALSE} for helpful debug messages), default
+  \code{TRUE}}
+}
+\description{
+  Launch the data frame viewer (DFV) user interface.
+}
+\examples{
+\dontrun{dfv() # should work out of the box like this for most applications}
+}
+
