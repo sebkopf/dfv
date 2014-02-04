@@ -24,7 +24,7 @@ R version 3 requires the GTK+ 2.24 framework which does not work properly yet on
 
 #####Details on GTK+ 2.24 trouble
 R version 3 requires the GTK+ 2.24 framework which does not work properly yet on Mac OS X throwing a malloc error when running the following simple example:
-```R
+```
 > library(gWidgets)
 > options("guiToolkit"="RGtk2")
 > win <- gwindow("test")
@@ -42,7 +42,7 @@ The problem is documented on stack overflow in some detail here: http://stackove
 
 ###Install dependencies
 The package has a few dependencies required for performing various tasks, make sure these are installed. You can do this quickly by running the following code in an R command line:
-```R
+```
 install.packages('devtools', depen=T) # development tools
 install.packages('ggplot2', depen=T) # for plotting purposes
 install.packages('psych', depen=T) # for implementation of copy & paste
@@ -74,7 +74,7 @@ Note: if you don't like a version, you can always go back to your favorite by lo
 
 ###Run dfv
 Once installed, you can now run the Data Frame Viewer in any R workspace (terminal, RStudio, iPython Rmagic, etc.):
-```R
+```
 library(dfv)
 dfv.start()
 ```
