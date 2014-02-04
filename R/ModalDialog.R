@@ -2,33 +2,6 @@
 
 ModalDialogGui <- setClass("ModalDialogGui", contains="BaseGui")
 
-setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
-  return (
-    '<menu name = "DFV" action="DFV">
-      <menuitem action="Reload"/>
-      <menuitem action="SaveToWS"/>
-      <menuitem action="Quit"/>
-    </menu>
-    <menu name = "Data" action="Data">
-      <menuitem action="Paste"/>
-      <menuitem action="ImportExcel"/>
-    </menu>
-    <menu name = "Code" action="Code">
-      <menuitem action="Run"/>
-      <menuitem action="Snippets"/>
-    </menu>
-    <menu name = "Plots" action="Plots">
-      <menuitem action="NewPlotTab"/>
-      <menuitem action="ClosePlotTab"/>
-      <menuitem action="SavePlot"/>
-      <menuitem action="SaveAllPlots"/>
-      <menuitem action="PrintPlot"/>
-    </menu>
-    <menu name = "Help" action="Help">
-      <menuitem action="ggplot"/>
-    </menu>')
-})
-
 setMethod("getToolbarXML", "ModalDialogGui", function(gui, module) {
   return (
     nav <- '

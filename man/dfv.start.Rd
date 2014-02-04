@@ -25,6 +25,6 @@
   Launch the data frame viewer (DFV) user interface.
 }
 \examples{
-\dontrun{dfv() # should work out of the box like this for most applications}
+\dontrun{dfv.start() # should work out of the box like this for most applications}
 }
 
