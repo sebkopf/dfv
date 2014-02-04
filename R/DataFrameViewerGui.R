@@ -14,6 +14,7 @@ setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
       <menuitem action="AddInfo"/>
     </menu>
     <menu name = "Code" action="Code">
+      <menuitem action="Generate"/>
       <menuitem action="Run"/>
     </menu>
     <menu name = "Plots" action="Plots">
@@ -25,6 +26,8 @@ setMethod("getMenuXML", "DataFrameViewerGui", function(gui, module) {
     </menu>
     <menu name = "Help" action="Help">
       <menuitem action="ggplot"/>
+      <menuitem action="reshape"/>
+      <menuitem action="xlsx"/>
     </menu>')
 })
 
@@ -36,6 +39,7 @@ setMethod("getToolbarXML", "DataFrameViewerGui", function(gui, module) {
     <toolitem action="Melt"/>
     <toolitem action="AddInfo"/>
     <separator expand="true"/>
+    <toolitem action="Generate"/>
     <toolitem action="Run"/>
     <separator expand="true"/>
     <toolitem action="NewPlotTab"/>
@@ -79,7 +83,8 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
           getElements(gui, module, "infoDialog")$saveGui()
       } ),
       list ("Code", NULL , "_Code" , NULL, NULL, NULL),
-      list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(...) { runCode(getModule(gui, module)) } ),
+      list ("Generate", "gtk-properties", "Make ggplot code", "<ctrl>G", "Generates ggplot code for the current plot constructor parameters. This will overwrite the code field of the current plot tab.", function(...) { generateCode.ggplot(getModule(gui, module)) } ),
+      list ("Run", "gtk-execute", "Run code", "<ctrl>R", "Execute code for tab", function(h, ...) { runCode(getModule(gui, module)) } ),
 #      list ("Snippets", "gtk-find-and-replace", "Code Snippets", NULL, "Save/load code snippets", function(...) { gmessage("Sorry, not implemented yet.") } ),
       list ("Plots", NULL , "_Plots" , NULL, NULL, NULL),
       list ("NewPlotTab", gn$icons$NEW.PLOT, "New plot", "<ctrl>N", NULL, function(...) { gn$newPlotTab(activate = TRUE) } ),
@@ -94,7 +99,9 @@ setMethod("setNavigationActions", "DataFrameViewerGui", function(gui, module, ac
         } ),
       list ("PrintPlot", gn$icons$PRINT.PLOT, "Print plot", NULL, NULL, function(...) { gn$printPlot() } ),
       list ("Help" , NULL , "_Help" , NULL , NULL , NULL ),
-      list ("ggplot" , "gtk-info" ,"ggplot2" , NULL , NULL , function(...) browseURL("http://ggplot2.org/") )
+      list ("ggplot" , "gtk-info" ,"ggplot2" , NULL , NULL , function(...) browseURL("http://ggplot2.org/") ),
+      list ("reshape" , "gtk-info" ,"reshape2" , NULL , NULL , function(...) browseURL("http://cran.r-project.org/web/packages/reshape2/reshape2.pdf") ),
+      list ("xlsx" , "gtk-info" ,"xlsx" , NULL , NULL , function(...) browseURL("http://cran.r-project.org/web/packages/xlsx/xlsx.pdf") )
       )
   
   actionGrp$addActions(nav.actions)
@@ -123,7 +130,7 @@ function(gui, module) {
   
   ### data frames table
   dfs.frame<-gframe("Available Data Frames", cont=left.tgrp, horizontal=FALSE, expand=TRUE)
-  addHandlerIdle(dfs.frame, interval = 1000, handler = function(...) refreshDataFrames(getModule(gui, module)))
+  #FIXME addHandlerIdle(dfs.frame, interval = 1000, handler = function(...) refreshDataFrames(getModule(gui, module))) 
   dfTable <- DataTable$new()
   setElements(gui, module, dfTable = dfTable)
   dfTable$setSettings(resizable = TRUE, sortable = TRUE)
@@ -155,7 +162,12 @@ function(gui, module) {
       b <- gbutton(action = 
             gaction("<Drop here>", tooltip = "Drag table tabs/columns here. Click to reset.", 
                     handler = function (...) svalue(b) <- "<Drop here>"), width=10, cont = grp)
-      adddroptarget(b, targetType="object", handler = function(h, ...) svalue(h$obj) <- gWidgets::id(h$dropdata)) 
+      adddroptarget(b, targetType="object", handler = function(h, ...) {
+        if (!is.null(h$dropdata) && gWidgetsRGtk2:::is.gdataframecolumn(h$dropdata))
+          svalue(h$obj) <- gWidgets::id(h$dropdata)
+        print('hello')
+        return(TRUE)
+      }) 
     }
     gtkButton <- getToolkitWidget(b)
     gtkButton['relief'] <- 'none' # change button relief
@@ -185,6 +197,7 @@ function(gui, module) {
     droptargetHandler = function(h,...) {
       if (!is.null(h$dropdata) && !is.null(column <- gWidgets::id(h$dropdata))) 
         generateCode.singleColumnMultiplot(getModule(gui, module), column)
+      return (TRUE)
       })
   tab$setData(code = '')
   gn <- GraphicsNotebook$new(tab = tab)
@@ -319,8 +332,8 @@ generateCode.singleColumnMultiplot <- function(module, column) {
 
 #' Run the code that is in the code field
 runCode <- function(module) {
+  if (!is.null(module) && !is.null(tab <- module$getElements('gn')$getActiveTab())) {
   code <- module$getWidgetValue('code')
-  tab <- module$getElements('gn')$getActiveTab()
   tab$setData(code = code) # store code in tab
   
   # error function when there is trouble with the code
@@ -332,6 +345,7 @@ runCode <- function(module) {
   # try to run plot generation
   tryCatch(eval(parse(text = code)), error = errorFun, warning = errorFun)
   showInfo(module$gui, module, msg=paste0("Code successfully run"), timer = 2, okButton = FALSE)
+  }
 }
 
 #################
