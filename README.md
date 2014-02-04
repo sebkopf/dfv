@@ -24,7 +24,7 @@ R version 3 requires the GTK+ 2.24 framework which does not work properly yet on
 
 #####Details on GTK+ 2.24 trouble
 R version 3 requires the GTK+ 2.24 framework which does not work properly yet on Mac OS X throwing a malloc error when running the following simple example:
-```R
+```
 > library(gWidgets)
 > options("guiToolkit"="RGtk2")
 > win <- gwindow("test")
@@ -42,7 +42,7 @@ The problem is documented on stack overflow in some detail here: http://stackove
 
 ###Install dependencies
 The package has a few dependencies required for performing various tasks, make sure these are installed. You can do this quickly by running the following code in an R command line:
-```R
+```
 install.packages('devtools', depen=T) # development tools
 install.packages('ggplot2', depen=T) # for plotting purposes
 install.packages('psych', depen=T) # for implementation of copy & paste
@@ -50,17 +50,31 @@ install.packages('gWidgets', depen=T) # the generic widgets interface
 install.packages('RGtk2', depen=T) # for specific GTK toolkit 
 install.packages('xlsx', depen=T) # for reading excel files
 ```
+#####Troubleshooting
+The ``` xlsx ``` package uses ``` rJava ``` to access the Java API for Excel. This requires Java to be installed on your computer. You can test that this is the case by loading the library in  R:
+
+```
+library(xlsx)
+```
+
+If there is a problem, it might throw an error something like the one below and usually launch an installer program for Java. If this is not the case, please go directly to http://java.com/en/download/index.jsp to install the newest version of the Java runtime environment (JRE) for your operating system and then restart RStudio and try again.
+```
+No Java runtime present, requesting install.
+Error: Command failed (97)
+```
+
 
 ###Get dfv from GitHub
 Install the latest version of the Data Frame Viewer directly from GitHub by running the following code:
-```R
-library(devtools)
-install_github('dfv', 'sebkopf', ref = 'master')
 ```
+library(devtools)
+install_github('dfv', 'sebkopf')
+```
+Note: if you don't like a version, you can always go back to your favorite by loading it directly (``` install_github('dfv', 'sebkopf', ref = 'v1.0') ```)
 
 ###Run dfv
 Once installed, you can now run the Data Frame Viewer in any R workspace (terminal, RStudio, iPython Rmagic, etc.):
-```R
+```
 library(dfv)
 dfv.start()
 ```
