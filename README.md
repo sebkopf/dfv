@@ -50,14 +50,25 @@ install.packages('gWidgets', depen=T) # the generic widgets interface
 install.packages('RGtk2', depen=T) # for specific GTK toolkit 
 install.packages('xlsx', depen=T) # for reading excel files
 ```
-#####Known problems
+#####Troubleshooting
+The ``` xlsx ``` package uses ``` rJava ``` to access the Java API for Excel. This requires Java to be installed on your computer. You can test that this is the case by loading the library in  R:
+
+```
+library(xlsx)
+```
+
+If there is a problem, it might throw an error something like the one below and usually launch an installer program for Java. If this is not the case, please go directly to http://java.com/en/download/index.jsp to install the newest version of the Java runtime environment (JRE) for your operating system and then restart RStudio and try again.
+```
+No Java runtime present, requesting install.
+Error: Command failed (97)
+```
 
 
 ###Get dfv from GitHub
 Install the latest version of the Data Frame Viewer directly from GitHub by running the following code:
-```R
+```
 library(devtools)
-install_github('dfv', 'sebkopf', ref = 'master')
+install_github('dfv', 'sebkopf')
 ```
 Note: if you don't like a version, you can always go back to your favorite by loading it directly (``` install_github('dfv', 'sebkopf', ref = 'v1.0') ```)
 
