@@ -130,7 +130,7 @@ function(gui, module) {
   
   ### data frames table
   dfs.frame<-gframe("Available Data Frames", cont=left.tgrp, horizontal=FALSE, expand=TRUE)
-  #FIXME addHandlerIdle(dfs.frame, interval = 1000, handler = function(...) refreshDataFrames(getModule(gui, module))) 
+  addHandlerIdle(dfs.frame, interval = 1000, handler = function(...) refreshDataFrames(getModule(gui, module))) 
   dfTable <- DataTable$new()
   setElements(gui, module, dfTable = dfTable)
   dfTable$setSettings(resizable = TRUE, sortable = TRUE)
@@ -162,12 +162,7 @@ function(gui, module) {
       b <- gbutton(action = 
             gaction("<Drop here>", tooltip = "Drag table tabs/columns here. Click to reset.", 
                     handler = function (...) svalue(b) <- "<Drop here>"), width=10, cont = grp)
-      adddroptarget(b, targetType="object", handler = function(h, ...) {
-        if (!is.null(h$dropdata) && gWidgetsRGtk2:::is.gdataframecolumn(h$dropdata))
-          svalue(h$obj) <- gWidgets::id(h$dropdata)
-        print('hello')
-        return(TRUE)
-      }) 
+      adddroptarget(b, targetType="text", handler = function(h, ...) svalue(h$obj) <- gWidgets::id(h$dropdata)) 
     }
     gtkButton <- getToolkitWidget(b)
     gtkButton['relief'] <- 'none' # change button relief
@@ -237,21 +232,40 @@ refreshDataFrames <- function(module) {
           dmsg("changed data frame '", df.name, "' is loaded --> reload ...")
           module$loadWidgets(dataNb = which(df.name == names(dataNb))[1])
           dispose(dataNb) # close tab
-          gdf(get(df.name, env=.GlobalEnv), cont = dataNb, expand=TRUE, label = df.name) # reload tab
+          loadDataFrame(module, df.name) # reload the data frame
         }
       }
     }
   }
 }
 
-# load data frame
-loadDataFrame <- function(module) {
-  df.name <- module$getElements('dfTable')$getSelectedValues('Name')
+#' Loads a data frame into a new tab of the dataNb notebook
+#' @param module - the Module object that stores the relevant widgets
+#' @param df.name - the name of the data frame to load (by default the one selected in the dfTable Element in the Module)
+loadDataFrame <- function(module, df.name = module$getElements('dfTable')$getSelectedValues('Name')) {
   if (!is.null(df.name)) {
     df <- get(df.name, env=.GlobalEnv)
-    if (is.na(select<-(which(names(module$getWidgets('dataNb')) == df.name)[1]))) 
-      gdf(df, cont = module$getWidgets('dataNb'), expand=TRUE, label = df.name) # make new data table
-    else
+    if (is.na(select<-(which(names(module$getWidgets('dataNb')) == df.name)[1]))) {
+      # make new data table
+      grp <- ggroup(cont = module$getWidgets('dataNb'), label = df.name)
+      table <- DataTable$new()
+      table$setData(frame = df)
+      table$setSettings(sortable = TRUE, resizable = TRUE)
+      table$makeGui(grp)
+      table$loadGui()
+      
+      # enable table header columns as drag & drop sources
+      TARGET.TYPE.TEXT   <- 80
+      target <- gtkTargetEntry("text/plain", 0, TARGET.TYPE.TEXT) # Note: switching this to "object" woudl allow not just text in sel (a GtkSelectionData object)
+      handler <- function(widget, context, sel, tType, eTime) sel$setText(widget$getLabel())
+      for (i in seq_along(cols <- colnames(table$table$model))) {
+        button <- gtkButtonNewWithLabel(cols[i])
+        button['relief'] <- 'none'
+        gtkDragSourceSet(button, start.button.mask=c("button1-mask"), targets = target, actions="copy")
+        gSignalConnect(button, "drag-data-get", handler)
+        table$table$view$getColumn(i-1)$setWidget(button)
+      }
+    } else
       module$loadWidgets(dataNb = select) # data frame alreay open, reselect the tab
   }
 }
