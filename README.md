@@ -50,6 +50,8 @@ install.packages('gWidgets', depen=T) # the generic widgets interface
 install.packages('RGtk2', depen=T) # for specific GTK toolkit 
 install.packages('xlsx', depen=T) # for reading excel files
 ```
+#####Known problems
+
 
 ###Get dfv from GitHub
 Install the latest version of the Data Frame Viewer directly from GitHub by running the following code:
@@ -57,6 +59,7 @@ Install the latest version of the Data Frame Viewer directly from GitHub by runn
 library(devtools)
 install_github('dfv', 'sebkopf', ref = 'master')
 ```
+Note: if you don't like a version, you can always go back to your favorite by loading it directly (``` install_github('dfv', 'sebkopf', ref = 'v1.0') ```)
 
 ###Run dfv
 Once installed, you can now run the Data Frame Viewer in any R workspace (terminal, RStudio, iPython Rmagic, etc.):
