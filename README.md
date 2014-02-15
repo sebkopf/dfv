@@ -78,3 +78,9 @@ Once installed, you can now run the Data Frame Viewer in any R workspace (termin
 library(dfv)
 dfv.start()
 ```
+
+Or directly from the command line (or a bash/bat script) via Rscript (important to run with ```modal=TRUE```)
+```
+> Rscript -e 'library(dfv); dfv.start(modal=TRUE)'
+```
+
