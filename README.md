@@ -73,13 +73,13 @@ install_github('dfv', 'sebkopf')
 Note: if you don't like a version, you can always go back to your favorite by loading it directly (``` install_github('dfv', 'sebkopf', ref = 'v1.0') ```)
 
 ###Run dfv
-Once installed, you can now run the Data Frame Viewer in any R workspace (terminal, RStudio, iPython Rmagic, etc.):
+Once installed, you can now run the Data Frame Viewer in any R workspace (command line R, RStudio, iPython Rmagic, etc.):
 ```
 library(dfv)
 dfv.start()
 ```
 
-Or directly from the command line (or a bash/bat script) via Rscript (important to run with ```modal=TRUE```)
+Or directly from the terminal via Rscript (important to run with ```modal=TRUE```)
 ```
 > Rscript -e 'library(dfv); dfv.start(modal=TRUE)'
 ```
