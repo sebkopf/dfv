@@ -1,7 +1,7 @@
 Data Frame Viewer (dfv)
 ===
 
-This package provides a simple user interface to facilitate getting started with using R for data processing. The GUI illustrates how to import data from Excel, melt data frames into plottable format, add additional information to the data and plot it using ggplot. Provides an easy system to keep track of multiple plots and save them in PDF format. Always shows the actual code that is executed to process or plot the data so users can experiment with changing the code directly and copy it to make their own data processing pipeline independent of this GUI.
+This package provides a simple user interface to facilitate getting started with using R for data processing. The GUI illustrates how to import data from Excel, melt data frames into plottable format, add additional information to the data and plot it using ggplot. Provides an easy system to keep track of multiple plots and save them in PDF format. Always shows the actual code that is executed to process or plot the data so users can experiment with changing the code directly and copy it to make their own data processing pipeline independent of this GUI. The data frame viewer can also save all settings and plotting code/tabs and reload them in the next R session to make it easy to continue were left off.
 
 The user interface in this package is generated using GTK+, a cross-platform toolkit for graphical user interfaces (http://www.gtk.org/). GTK needs to be installed prior to using this package but the installation is fairly straight forward (there is a known problem with the newest version of GTK on Mac OS, see details below). If R and GTK are already installed and running on your system, you can go straight to [installing the dfv package](#install-dfv-package).
 
