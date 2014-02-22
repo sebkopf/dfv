@@ -42,15 +42,16 @@ Abort trap: 6
 
 The problem is documented on stack overflow in [some detail](http://stackoverflow.com/questions/15868860/r-3-0-and-gtk-rgtk2-error). There is a work-around but it requires installing gtk2 via macports or homebrew and installing the R packages RGtk2 and cairoDevice from source. The approach listed below is inspired by suggestions on stack overflow (especially this [contribution from John Verzani](https://dl.dropboxusercontent.com/u/515592/README-mac-gtk.md) and worked well for me and others):
 
- - install macports (http://www.macports.org/install.php)
+ - install macports, a tool for installing open-source software on MacOS (http://www.macports.org/install.php)
   - macports requires Apple's Xcode command line tools (free but you need an AppleID to download), which include all the necessary compilers for macports
   - you can install the full version of Xcode (~2Gb) or just the command line tools (in either case, make sure to install the latest version for your MacOS version)
   - for the full version, after installation go to the XCode preferences and *install the command line tools*
   - for the command line tools only, search for *command line tools* on https://developer.apple.com/downloads/ (the standalone command line tools are not recognized by the MacPorts installers but the warnings can be safely ignored)
- - open a terminal and run the following commands to install GTK (you will be asked for your password)
-  - ```sudo port selfupdate```
-  - ```sudo port install gtk2 +x11```
+ - after installing macports, open a terminal and run the following commands to install GTK (you will be asked for your password)
   - ```export PATH=/opt/local/bin:/opt/local/sbin:$PATH```
+  - ```sudo port selfupdate```
+  - ```sudo port install pkgconfig```
+  - ```sudo port install gtk2 +x11```
  - then download the *RGtk2* and *cairoDevice* package source from CRAN (there might newer versions but these were current as of 2/20/14):
   - http://cran.r-project.org/src/contrib/RGtk2_2.20.25.tar.gz
   - http://cran.r-project.org/src/contrib/cairoDevice_2.19.tar.gz
