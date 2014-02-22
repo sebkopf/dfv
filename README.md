@@ -40,7 +40,7 @@ guiWidget of type: gEditRGtk for toolkit: guiWidgetsToolkitRGtk2
 Abort trap: 6
 ```
 
-The problem is documented on stack overflow in [some detail](#http://stackoverflow.com/questions/15868860/r-3-0-and-gtk-rgtk2-error). There is a work-around but it requires installing gtk2 via macports or homebrew and installing the R packages RGtk2 and cairoDevice from source. The approach listed below is inspired by suggestions on stack overflow (especially this [contribution from John Verzani](https://dl.dropboxusercontent.com/u/515592/README-mac-gtk.md) and worked well for me and others):
+The problem is documented on stack overflow in [some detail](http://stackoverflow.com/questions/15868860/r-3-0-and-gtk-rgtk2-error). There is a work-around but it requires installing gtk2 via macports or homebrew and installing the R packages RGtk2 and cairoDevice from source. The approach listed below is inspired by suggestions on stack overflow (especially this [contribution from John Verzani](https://dl.dropboxusercontent.com/u/515592/README-mac-gtk.md) and worked well for me and others):
 
  - install macports (http://www.macports.org/install.php)
   - macports requires Apple's Xcode command line tools (free but you need an AppleID to download), which include all the necessary compilers for macports
@@ -90,6 +90,6 @@ dfv.start()
 
 Or directly from the terminal via Rscript (important to run with ```modal=TRUE```)
 ```
-> Rscript -e 'library(dfv); dfv.start(modal=TRUE)'
+Rscript -e 'library(dfv); dfv.start(modal=TRUE)'
 ```
 
