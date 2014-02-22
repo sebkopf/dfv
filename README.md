@@ -50,7 +50,7 @@ The problem is documented on stack overflow in [some detail](http://stackoverflo
  - open a terminal and run the following commands to install GTK (you will be asked for your password)
   - ```sudo port selfupdate```
   - ```sudo port install gtk2 +x11```
-  - ```exportPATH=/opt/local/bin:/opt/local/sbin:$PATH```
+  - ```export PATH=/opt/local/bin:/opt/local/sbin:$PATH```
  - then download the *RGtk2* and *cairoDevice* package source from CRAN (there might newer versions but these were current as of 2/20/14):
   - http://cran.r-project.org/src/contrib/RGtk2_2.20.25.tar.gz
   - http://cran.r-project.org/src/contrib/cairoDevice_2.19.tar.gz
