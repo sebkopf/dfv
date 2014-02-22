@@ -16,6 +16,7 @@ Depends:
     grid,
     gWidgets, 
     RGtk2,
+    gWidgetsRGtk2,
     xlsx
 License: GPL-2
 Collate:
