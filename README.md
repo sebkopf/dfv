@@ -55,7 +55,7 @@ The problem is documented on stack overflow in [some detail](http://stackoverflo
  - then download the *RGtk2* and *cairoDevice* package source from CRAN (there might newer versions but these were current as of 2/20/14):
   - http://cran.r-project.org/src/contrib/RGtk2_2.20.25.tar.gz
   - http://cran.r-project.org/src/contrib/cairoDevice_2.19.tar.gz
- - install the two packages by running the following commands on the terminal (adjust for the correct path to the downloads)
+ - install the two packages by running the following commands on the terminal (adjust for the correct path to the downloads, RGtk2 may take a few minutes)
   - ```R CMD INSTALL ~/Downloads/RGtk2_2.20.25.tar.gz```
   - ```R CMD INSTALL ~/Downloads/cairoDevice_2.19.tar.gz```
 
