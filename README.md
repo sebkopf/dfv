@@ -10,10 +10,14 @@ The user interface in this package is generated using GTK+, a cross-platform too
 ##Install R and GTK+
 
 ###Windows
-If you don't have R yet, install the newest version from http://www.r-project.org/ . Additionally, I highly recommend RStudio (http://www.rstudio.com/) for working with R regularly (but the basic command line will work just fine for the Data Frame Viewer). Once R is installed, you can directly [install the dfv package](#install-dfv-package) and R will walk you through installing GTK+ the first time you start the dfv (or any other GTK based GUI). So in brief:
+If you don't have R yet, install the newest version from http://www.r-project.org/ . Additionally, I highly recommend RStudio (http://www.rstudio.com/) for working with R regularly (but the basic command line will work just fine for the Data Frame Viewer). Once R is installed, you can install GTK directly from within R (details below) and then you're ready to [install the dfv package](#install-dfv-package):
 
  - install R from http://www.r-project.org/
  - [optional but recommended: install R-Studio from http://www.rstudio.com/]
+ - install GTK+ 
+  1. From the R command line, install the ```RGtk2``` package by running: ```install.packages("RGtk2", depen=T)```
+  2. Then load the package by running: ```library(RGtk2)``` <br/> This will notice the missing GTK and prompt you to install it. Choose "Install GTK+" when prompted, it might take a few minutes to install. Afterwards it will likely still complain (restart required).
+  3. Restart R/Rstudio and confirm GTK is now up and running by reloading the package: ```library(RGtk2)```
  - [install the dfv package](#install-dfv-package)
 
 ###MacOS
@@ -74,12 +78,17 @@ install_github('dfv', 'sebkopf')
 Note: if you don't like a version, you can always go back to your favorite by installing it instead:
 ``` install_github('dfv', 'sebkopf', ref = 'v1.0') ```
 
-#####Troubleshooting
+####Troubleshooting
+
+##### Java
 The **xlsx** package uses **rJava** to access the Java API for Excel. This requires Java to be installed on your computer. If there is a problem, it might throw an error something like the one below and usually launch an installer program for Java. If this happens, please go directly to http://java.com/en/download/index.jsp to install the newest version of the Java runtime environment (JRE) for your operating system and then restart RStudio and try again.
 ```
 No Java runtime present, requesting install.
 Error: Command failed (97)
 ```
+
+##### Dependencies
+The dependency packages have many dependencies of their own and sometimes not all of them get installed properly all at once. If this is the case, try rerunning the dfv installation (now that fewer dependencies need to be installed) or install the failed packages manually by running ```install.packages("PACKAGE NAME", depen=T)``` from the R command line.
 
 
 ##Run dfv
