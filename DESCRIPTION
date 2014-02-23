@@ -17,6 +17,7 @@ Depends:
     gWidgets, 
     RGtk2,
     gWidgetsRGtk2,
+    cairoDevice,
     xlsx
 License: GPL-2
 Collate:
