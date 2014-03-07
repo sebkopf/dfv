@@ -7,61 +7,9 @@ The user interface in this package is generated using GTK+, a cross-platform too
 
 ![Screenshot of the Data Frame Viewer](/doc/screenshot.png?raw=true)
 
-##Install R and GTK+
+##Install R with GTK+
 
-###Windows
-If you don't have R yet, install the newest version from http://www.r-project.org/ . Additionally, I highly recommend RStudio (http://www.rstudio.com/) for working with R regularly (but the basic command line will work just fine for the Data Frame Viewer). Once R is installed, you can install GTK directly from within R (details below) and then you're ready to [install the dfv package](#install-dfv-package):
-
- - install R from http://www.r-project.org/
- - [optional but recommended: install R-Studio from http://www.rstudio.com/]
- - install GTK+ 
-  1. From the R command line, install the ```RGtk2``` package by running: ```install.packages("RGtk2", depen=T)```
-  2. Then load the package by running: ```library(RGtk2)``` <br/> This will notice the missing GTK and prompt you to install it. Choose "Install GTK+" when prompted, it might take a few minutes to install. Afterwards it will likely still complain (restart required).
-  3. Restart R/Rstudio and confirm GTK is now up and running by reloading the package: ```library(RGtk2)```
- - [install the dfv package](#install-dfv-package)
-
-###MacOS
-R version 3 requires the GTK+ 2.24 framework which does not work properly out of the box yet on Mac OS X ([details on the problem and instructions on how to solve it below if you want to use it in R 3](#details-on-gtk-224-trouble)). I'm sure this will be resolved eventually in a normal installation of R >= 3.0 and GTK+ 2.24 but for the time being I recommend just installing the older GTK+ 2.18 framework (http://r.research.att.com/libs/GTK_2.18.5-X11.pkg) instead and using R 2.15 (http://r.research.att.com/R-2.15-branch-leopard.pkg - works fine with OS X Lion). If you already have R > 3.0 installed and want to run both version, no problem, the little helper program RSwitch (http://r.research.att.com/RSwitch-1.2.dmg) provides a simple means for switching back and forth easily. Also, having both GTK+ 2.24 and GTK+ 2.18 installed is no problem either, just make sure the 'Current' symlink in '/Library/Frameworks/GTK+.framework/Versions/' points to 2.18.X11. So in brief:
-
- - install R 2.15 from http://r.research.att.com/R-2.15-branch-leopard.pkg
- - [optional but recommended: install R-Studio from http://www.rstudio.com/]
- - install GTK 2.18 from http://r.research.att.com/libs/GTK_2.18.5-X11.pkg
- - [install the dfv package](#install-dfv-package)
-
-If really you want to run GTK+ with R >= 3.0, please see the more detailed description of the problem and instructions on how to solve it below.
-
-#####Details on GTK+ 2.24 trouble
-R version 3 requires the GTK+ 2.24 framework which does not work properly yet out of the box on Mac OS X throwing a malloc error when running the following simple example:
-```
-> library(gWidgets)
-> options("guiToolkit"="RGtk2")
-> win <- gwindow("test")
-> glabel("test label", container = win)
-
-> gedit("test text field", container = win)
-guiWidget of type: gEditRGtk for toolkit: guiWidgetsToolkitRGtk2 
-> R(9523,0x7fff76be1960) malloc: *** error for object 0x4024000000000000: pointer being freed was not allocated *** set a breakpoint in malloc_error_break to debug
-Abort trap: 6
-```
-
-The problem is documented on stack overflow in [some detail](http://stackoverflow.com/questions/15868860/r-3-0-and-gtk-rgtk2-error). There is a work-around but it requires installing gtk2 via macports or homebrew and installing the R packages RGtk2 and cairoDevice from source. The approach listed below is inspired by suggestions on stack overflow (especially this [contribution from John Verzani](https://dl.dropboxusercontent.com/u/515592/README-mac-gtk.md) and worked well for me and others):
-
- - install macports, a tool for installing open-source software on MacOS (http://www.macports.org/install.php)
-  - macports requires Apple's Xcode command line tools (free but you need an AppleID to download), which include all the necessary compilers for macports
-  - you can install the full version of Xcode (~2Gb) or just the command line tools (in either case, make sure to install the latest version for your MacOS version)
-  - for the full version, after installation go to the XCode preferences and *install the command line tools*
-  - for the command line tools only, search for *command line tools* on https://developer.apple.com/downloads/ (the standalone command line tools are not recognized by the MacPorts installers but the warnings can be safely ignored)
- - after installing macports, open a terminal and run the following commands to install GTK (you will be asked for your password)
-  - ```export PATH=/opt/local/bin:/opt/local/sbin:$PATH```
-  - ```sudo port selfupdate```
-  - ```sudo port install pkgconfig```
-  - ```sudo port install gtk2 +x11```
- - then download the *RGtk2* and *cairoDevice* package source from CRAN (there might newer versions but these were current as of 2/20/14):
-  - http://cran.r-project.org/src/contrib/RGtk2_2.20.25.tar.gz
-  - http://cran.r-project.org/src/contrib/cairoDevice_2.19.tar.gz
- - install the two packages by running the following commands on the terminal (adjust for the correct path to the downloads, RGtk2 may take a few minutes)
-  - ```R CMD INSTALL ~/Downloads/RGtk2_2.20.25.tar.gz```
-  - ```R CMD INSTALL ~/Downloads/cairoDevice_2.19.tar.gz```
+Please follow this [link](https://gist.github.com/sebkopf/9405675) for information on installing R with GTK+.
 
 ##Install dfv package
 
