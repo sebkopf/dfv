@@ -1,3 +1,6 @@
+#' @include ModalDialog.R
+NULL
+
 DataMeltDialogGui <- setClass("DataMeltDialogGui", contains="ModalDialogGui")
 
 setMethod("getToolbarXML", "DataMeltDialogGui", function(gui, module) {
@@ -85,7 +88,7 @@ DataMeltDialog <- setRefClass(
   'DataMeltDialog',
   contains = 'ModalDialog',
   methods = list(
-    initialize = function(gui = DataMeltDialogGui(), ...){
+    initialize = function(gui = new("DataMeltDialogGui"), ...){
       callSuper(gui = gui, ...)
       
       ### overwrite default setting for DataMeltDialog

@@ -1,3 +1,6 @@
+#' @include ModalDialog.R
+NULL
+
 SavePlotDialogGui <- setClass("SavePlotDialogGui", contains="ModalDialogGui")
 
 setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
@@ -67,11 +70,12 @@ setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
   })
 })
 
+
 SavePlotDialog <- setRefClass(
   'SavePlotDialog',
   contains = 'ModalDialog',
   methods = list(
-    initialize = function(gui = SavePlotDialogGui(), ...){
+    initialize = function(gui = new("SavePlotDialogGui"), ...){
       callSuper(gui = gui, ...)
       
       ### overwrite default setting for SavePlotDialog

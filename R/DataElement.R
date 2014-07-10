@@ -1,3 +1,6 @@
+#' @include utils.R
+NULL
+
 #' Class representing a reference class DataElement that holds both basic 
 #' data information and settings information.
 #' 
@@ -60,7 +63,7 @@ DataElement <- setRefClass(
         sets <- sets[[1]]
       
       # protected settings
-      if (overwriteProtected == TRUE && length(protected) > 0 && length(owrite <- intersect(names(sets), protected)) > 0) 
+      if (overwriteProtected == TRUE && length(protected) > 0 && length(owrite <- intersect(names(sets), protected)) > 0 && exists("dmsg")) # FIXME: for documentation generation, need to check if dmsg function exists! 
         dmsg("For class ", class(.self), " instance, overwriting protected settings: ", paste(owrite, collapse=", "))
       else if (overwriteProtected == FALSE)
         sets <- sets[setdiff(names(sets), protected)] # exclude protected settings
@@ -79,7 +82,7 @@ DataElement <- setRefClass(
     protectSettings = function(ids) {
       if (missing(ids))
         ids <- names(settings)
-      if ( length(pro <- setdiff(ids, protected)) > 0 ) { # which ones are newly protected?
+      if ( length(pro <- setdiff(ids, protected)) > 0 && exists("dmsg") ) { # which ones are newly protected?
         dmsg("For class ", class(.self), " instance, protecting the following settings: ", paste(pro, collapse=", "))
         protected <<- c(protected, pro)
       }

@@ -1,3 +1,6 @@
+#' @include ModalDialog.R
+NULL
+
 DataImportDialogGui <- setClass("DataImportDialogGui", contains="ModalDialogGui")
 
 setMethod("getToolbarXML", "DataImportDialogGui", function(gui, module) {
@@ -120,7 +123,7 @@ DataImportDialog <- setRefClass(
   'DataImportDialog',
   contains = 'ModalDialog',
   methods = list(
-    initialize = function(gui = DataImportDialogGui(), ...){
+    initialize = function(gui = new("DataImportDialogGui"), ...){
       callSuper(gui = gui, ...)
       
       ### overwrite default setting for DataImportDialog

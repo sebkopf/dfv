@@ -6,6 +6,7 @@ Date: 2014-02-03
 Authors@R: c(
   person("Sebastian", "Kopf", role = c("aut", "cre"), email = "seb.kopf@gmail.com"))
 Description: Gui to facilitate getting started with using R for data processing. Illustrates how to import data from Excel, melt data frames into plottable format, add additional information to the data and plot it using ggplot.
+Roxygen: list(wrap = FALSE)
 Depends:
     R (>= 2.15),  
     ggplot2,
@@ -27,7 +28,7 @@ Collate:
   'DataFrameViewerGui.R'
   'DataElement.R'
   'GuiElement.R'
-  'Module.R'
+  'GuiModule.R'
   'ModalDialog.R'
   'SavePlotDialog.R'
   'DataImportDialog.R'

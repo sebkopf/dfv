@@ -38,9 +38,9 @@ setMethod("makeNavigation", "ModalDialogGui", function(gui, module) {
 
 ModalDialog <- setRefClass(
   'ModalDialog',
-  contains = 'Module',
+  contains = 'GuiModule',
   methods = list(
-    initialize = function(gui = ModalDialogGui(), ...){
+    initialize = function(gui = new("ModalDialogGui"), ...){
       callSuper(gui = gui, ...)
       
       ### default setting for ModalDialog

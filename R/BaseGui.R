@@ -35,6 +35,12 @@ setGeneric("makeMainGui", function(gui, module) standardGeneric("makeMainGui"))
 setGeneric("setNavigationActions", function(gui, module, actionGrp) standardGeneric("setNavigationActions"))
 
 # other utility functions for interacting with the Gui
+
+#' show an info message
+#' type - styling of the mssage, info, error, question, warning are the standard ones
+#' timer - time in seconds until message disappears automatically
+#' okButton - whether there is an ok button or not
+#' @method showInfo
 setGeneric("showInfo", function(gui, module, msg, type="question", timer=2, okButton=TRUE) standardGeneric("showInfo"))
 setGeneric("hideInfo", function(gui, module) standardGeneric("hideInfo"))
 
@@ -185,10 +191,6 @@ setMethod("makeInfoBar", "BaseGui", function(gui, module){
 })
 
 
-#' show an info message
-#' type - styling of the mssage, info, error, question, warning are the standard ones
-#' timer - time in seconds until message disappears automatically
-#' okButton - whether there is an ok button or not
 setMethod("showInfo", "BaseGui", function(gui, module, msg, type="question", timer=2, okButton=TRUE) {
   dmsg("\tShowing info message for", timer, "seconds.\n")
   getWidgets(gui, module, 'infoBar')$setMessageType(type)

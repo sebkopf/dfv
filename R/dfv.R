@@ -1,3 +1,21 @@
+#' Data Frame Viewer
+#' 
+#' Simple user interface to facilitate getting started with using R for data processing. Illustrates how to import data from Excel, melt data frames into plottable format, add additional information to the data and plot it using ggplot. Provides an easy system to keep track of multiple plots and save them in PDF format. Always shows the actual code that is executed to process or plot the data so users can experiment with changing the code directly and copy it to make their own data processing pipeline independent of this GUI.
+#' 
+#' The Data Frame Viewer can be run without any configuration for interacting with the data frames in any workspace.
+#' 
+#' @name dfv-package
+#' @aliases dfv
+#' @docType package
+#' @title dfv package
+#' @author Sebastian Kopf
+#' @seealso \code{\link{dfv.start}}
+#' @examples
+#' \dontrun{\code{dfv.start()}}
+NULL
+
+
+
 #' Launch the data frame viewer (DFV) user interface.
 #' @param wsVariable the name of the global variable to use when running "Save DFV" from the Gui 
 #' @param storeModule the name of a variable (e.g. \code{dfv.obj}) that, if set, will be assigned the dfv gui object for command line manipulation
@@ -21,7 +39,7 @@ dfv.start <- function(wsVariable = 'dfv_saved', storeModule = NULL, modal = FALS
     info=c("Banjo", "Turtle", "Jetpack", "Ferret", "Pizza"))
   
   # initialize new module for a data container bound to the Gui
-  module <- Module$new(gui = DataFrameViewerGui())
+  module <- GuiModule$new(gui = new("DataFrameViewerGui"))
   
   # set default settings
   module$setSettings(
@@ -55,8 +73,3 @@ dfv.dev <- function() {
   dfv.start(storeModule = 'dfv_test', silent = FALSE)
 }
 
-#' Debug message function
-dmsg <- function(...) {
-  if (exists('DEBUG') && DEBUG == TRUE)
-    message(list(...))
-}

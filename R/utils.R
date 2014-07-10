@@ -14,3 +14,9 @@ copyToClipboard <- function(variable) {
   if (!exists("writeClipboard")) # unix
     close(clipboard)
 }
+
+#' Debug message function
+dmsg <- function(...) {
+  if (exists('DEBUG') && DEBUG == TRUE)
+    message(list(...))
+}
