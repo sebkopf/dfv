@@ -284,6 +284,7 @@ generateCode.ggplot <- function(module) {
     
     # ggplot main
     code <- paste0(
+      "\nlibrary(ggplot2) # only needed once in file",
       "\n#Generate ggplot\n",
       "p <- ggplot(", plotParams$df, 
       ",\n\taes(x = ", sub(emptyS, "", plotParams$x), ", y = ", sub(emptyS, "", plotParams$y))
@@ -330,6 +331,7 @@ generateCode.singleColumnMultiplot <- function(module, column) {
   if (!is.null(module)) {
     df.name <- module$getElements('dfTable')$getSelectedValues('Name')
     module$loadWidgets(code = paste0(
+      "\nlibrary(ggplot2) # only needed once in file",
       "\n# Generate jitter, boxplot and violin plot of column '", column, "' in data frame '", df.name, "'\n",
       "p.jitter <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_jitter() + coord_flip() + theme_bw() + labs(x='Jitter', y='", column, "')\n",
       "p.box <- ggplot(", df.name, ", aes('', ", column, ")) + \n\tgeom_boxplot() + coord_flip() + theme_bw() + labs(x='Boxplot', y='", column, "')\n",

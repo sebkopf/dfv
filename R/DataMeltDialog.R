@@ -152,6 +152,7 @@ DataMeltDialog <- setRefClass(
       df.melt.name <- getWidgetValue('dframe.melt')
       idsTable <- getElements('idsTable')$getTableData(drop = FALSE)
       code <- paste0(
+        "\nlibrary(reshape2) # only needed once in file",
         "\n# Melt data frame",
         "\n", df.melt.name, " <- melt(", df.name, ", variable.name = '", getWidgetValue('melt.var'), "', value.name = '", getWidgetValue('melt.val'), "', ",
         "\n\tid.vars = c('", paste0(idsTable$Name[idsTable[['ID?']] == TRUE], collapse = "', '"), "'))")
@@ -177,7 +178,7 @@ DataMeltDialog <- setRefClass(
       }
       
       # try to run import (locally / globally)
-      tryCatch(eval(parse(text = code)), error = errorFun, warning = errorFun)
+      tryCatch(eval(parse(text = code), envir = .GlobalEnv), error = errorFun, warning = errorFun) # fix me, need to run in global to avoid conflict with $data in class
       
       # check what's in data frame
       df.melt <- get(df.melt.name)

@@ -181,10 +181,11 @@ DataImportDialog <- setRefClass(
         code.1 <- paste0(code, ", nrows=1)") # code for 1 line excerpt to find data types
       } else if (getSettings('mode') == 'excel') {
         code <- paste0(
+          "\nlibrary(xlsx) # only needed once in file",
           "\n# Read data frame from Excel file\n",
           sprintf("%s <- read.xlsx2(\n\tfile = '%s', \n\tsheetName = '%s',\n\theader = %s, stringsAsFactors = FALSE", 
                         options[[1]], getData('file'), options[[4]], options[[2]]))
-        code.1 <- paste0(sub("read.xlsx2", "read.xlsx", code), ", rowIndex(", options[[5]], "))") # code for 1 line excerpt to find data types
+        code.1 <- paste0(sub("read.xlsx2", "read.xlsx", code), ", rowIndex = ", options[[5]] + 1, ":", options[[5]] + 2, ")") # code for 1 line excerpt to find data types
         code <- paste0(code, ", startRow = ", options[[5]])
       }
       
