@@ -64,7 +64,25 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
                 getElements(gui, module, 'columnsTable')$setTableData(getElements(gui, module, 'columnsTable')$getTableData(0))
                 setData(gui, module, file = f)
                 setSettings(gui, module, mode = 'excel')
+                
+                # add sheets in excel workbook to the options GUI (requires remaking the table)
+                getElements(gui, module, 'optionsTable')$destroyGui()
+                options <- getElements(gui, module, 'optionsTable')$getData('frame')
+                excel_sheets <- names(getSheets(loadWorkbook(f)))
+                options$`Excel sheet` <- factor(excel_sheets[1], levels = excel_sheets)
+                getElements(gui, module, 'optionsTable')$setData(frame = options)
+                getElements(gui, module, 'optionsTable')$makeGui(
+                  getWidgets(gui, module, 'optionsGrp'),
+                  changedHandler = function(...){
+                    # empty preview table
+                    getElements(gui, module, 'columnsTable')$setTableData(getElements(gui, module, 'columnsTable')$getTableData(0))
+                    # generate code
+                    getModule(gui, module)$generateCode()
+                  })
+                getElements(gui, module, 'optionsTable')$loadGui()
                 getElements(gui, module, 'optionsTable')$changeColumnVisibility(c(3,4), c(FALSE, TRUE))
+                
+                # generate code
                 getModule(gui, module)$generateCode()
               }
             } ),
@@ -95,7 +113,7 @@ setMethod("makeMainGui", "DataImportDialogGui", function(gui, module) {
   codeGrp <- gframe("Code", expand=TRUE)
   tbPane <- gpanedgroup(dataGrp, codeGrp, expand=TRUE, horizontal=FALSE)
   tbPane2 <- gpanedgroup(columnsGrp, tbPane, container=mainGrp, expand=TRUE, horizontal=FALSE)
-  setWidgets(gui, module, tbPane2 = tbPane2, tbPane = tbPane, dataGrp = dataGrp)
+  setWidgets(gui, module, tbPane2 = tbPane2, tbPane = tbPane, optionsGrp = optionsGrp, dataGrp = dataGrp)
   
   # options table
   options <- DataTable$new()
@@ -148,10 +166,11 @@ DataImportDialog <- setRefClass(
         optionsTable = list(
           frame = data.frame( # all the options for formats
             Variable = 'data',
-            Headerrow = TRUE,
+            `Header row?` = TRUE,
             Separator = factor("tab", levels = c(",", "tab", ";")),
-            Sheet = 'Sheet1',
-            Startrow = as.integer(1),
+            `Excel sheet` = factor('Sheet1', levels = c('Sheet1')),
+            `Start row` = as.integer(1),
+            check.names = FALSE,
             stringsAsFactors = FALSE),
           selectedRows = 1
         ),
@@ -166,7 +185,6 @@ DataImportDialog <- setRefClass(
         dataTable = list(
           frame = data.frame(Data = character(0), Frame = character(0)))
       )
-      names(data$optionsTable$frame)[c(2,4,5)] <<- c('Header row?', 'Excel sheet', 'Start row')
     },
     
     # ' Generate the code for excel import
@@ -310,11 +328,12 @@ DataImportDialog <- setRefClass(
 )
 
 # Testing
-# t <- DataImportDialog$new()
-# t$setSettings(windowModal = FALSE, mode = 'excel') # easier for testing purposes
-# t$setData(file = '/Users/sk/Dropbox/Tools/software/r/dfv/Workbook1.xlsx')
-# t$makeGui()
-# Sys.sleep(1)
-# t$generateCode()
-
+test <- function() {
+  t <- DataImportDialog$new()
+  t$setSettings(windowModal = FALSE, mode = 'excel') # easier for testing purposes
+  # t$setData(file = '/Users/sk/Dropbox/Tools/software/r/dfv/Workbook1.xlsx')
+  t$makeGui()
+  # Sys.sleep(1)
+  # t$generateCode()
+}
 
