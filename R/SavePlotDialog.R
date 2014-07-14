@@ -48,7 +48,9 @@ setMethod("makeMainGui", "SavePlotDialogGui", function(gui, module) {
       stringsAsFactors=FALSE), isdir==TRUE)
     
     # figure out number of subdirectories
-    folders$Subdirs <- apply(folders, 1, function(x) length(which(file.info(dir(x[2], full.names=T))$isdir)))
+    folders$Subdirs <- logical(nrow(folders))
+    if (nrow(folders) > 0)
+      folders$Subdirs <- apply(folders, 1, function(x) length(which(file.info(dir(x[2], full.names=T))$isdir)))
     return(folders[c("Folder", "Path", "Subdirs")])
   }
   
