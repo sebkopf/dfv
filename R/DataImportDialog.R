@@ -68,7 +68,7 @@ setMethod("setNavigationActions", "DataImportDialogGui", function(gui, module, a
                 # add sheets in excel workbook to the options GUI (requires remaking the table)
                 getElements(gui, module, 'optionsTable')$destroyGui()
                 options <- getElements(gui, module, 'optionsTable')$getData('frame')
-                excel_sheets <- names(getSheets(loadWorkbook(f)))
+                excel_sheets <- excel_sheets(f)
                 options$`Excel sheet` <- factor(excel_sheets[1], levels = excel_sheets)
                 getElements(gui, module, 'optionsTable')$setData(frame = options)
                 getElements(gui, module, 'optionsTable')$makeGui(
@@ -199,32 +199,32 @@ DataImportDialog <- setRefClass(
         code.1 <- paste0(code, ", nrows=1)") # code for 1 line excerpt to find data types
       } else if (getSettings('mode') == 'excel') {
         code <- paste0(
-          "\nlibrary(xlsx) # only needed once in file",
+          "\nlibrary(readxl) # only needed once in file",
           "\n# Read data frame from Excel file\n",
-          sprintf("%s <- read.xlsx2(\n\tfile = '%s', \n\tsheetName = '%s',\n\theader = %s, stringsAsFactors = FALSE", 
+          sprintf("%s <- read_excel(\n\t'%s', \n\tsheet = '%s',\n\tcol_names = %s", 
                         options[[1]], getData('file'), options[[4]], options[[2]]))
-        code.1 <- paste0(sub("read.xlsx2", "read.xlsx", code), ", rowIndex = ", options[[5]] + 1, ":", options[[5]] + 2, ")") # code for 1 line excerpt to find data types
-        code <- paste0(code, ", startRow = ", options[[5]])
+        code.1 <- code #paste0(sub("read.xlsx2", "read.xlsx", code), ", rowIndex = ", options[[5]] + 1, ":", options[[5]] + 2, ")") # code for 1 line excerpt to find data types
+        code <- paste0(code, ", skip = ", options[[5]] - 1)
       }
       
       # check if there are columns defined yet
       defined <- nrow(getElements('columnsTable')$getTableData()) > 0
       if (defined) {
         types <- getElements('columnsTable')$getTableData(columns = 'Type')
-        code <- paste0(code, ", \n\tcolClasses = c('", 
+        code <- paste0(code, ", \n\tcol_types = c('", 
           paste(sapply(types, function(type) {
             switch(as.character(type),
-                   'Date + Time' = 'POSIXct',
-                   'Date' = 'Date',
+                   'Date + Time' = 'date',
+                   'Date' = 'date',
                    'Number' = 'numeric',
-                   'character')
+                   'text')
           }), collapse = "', '"), "')")
       } else {      
         # try to guess data types of the individual columns by running the script for the first column (silent if it doesn't work)
         tryCatch({
           eval(parse(text = code.1))
           df <- get(variable)
-          code <- paste0(code, ", \n\tcolClasses = c('", paste(sapply(df, function(col) { class (col)[1] }), collapse = "', '"), "')")
+          code <- paste0(code, ", \n\tcol_types = c('", paste(sapply(df, function(col) { class (col)[1] }), collapse = "', '"), "')")
         }, error = function(e) {}, warning = function(e) {})
       }
       code <- paste0(code, ")")

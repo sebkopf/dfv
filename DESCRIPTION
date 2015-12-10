@@ -19,7 +19,7 @@ Depends:
     RGtk2,
     gWidgetsRGtk2,
     cairoDevice,
-    xlsx
+    readxl
 License: GPL-2
 Collate:
   'utils.R'
