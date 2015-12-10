@@ -28,13 +28,6 @@ Note: if you don't like a version, you can always go back to your favorite by in
 
 ####Troubleshooting
 
-##### Java
-The **xlsx** package uses **rJava** to access the Java API for Excel. This requires Java to be installed on your computer. If there is a problem, it might throw an error something like the one below and usually launch an installer program for Java. If this happens, please go directly to http://java.com/en/download/index.jsp to install the newest version of the Java runtime environment (JRE) for your operating system and then restart RStudio and try again.
-```
-No Java runtime present, requesting install.
-Error: Command failed (97)
-```
-
 ##### Dependencies
 The dependency packages have many dependencies of their own and sometimes not all of them get installed properly all at once. If this is the case, try rerunning the dfv installation (now that fewer dependencies need to be installed) or install the failed packages manually by running ```install.packages("PACKAGE NAME", depen=T)``` from the R command line.
 
