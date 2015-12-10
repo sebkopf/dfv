@@ -122,7 +122,9 @@ DataTable <- setRefClass(
     # ' for editable cells, the standard cell change handler in this class is called (feel free to overwrite)
     # ' FIXME can't deal with date properly
     makeColumn = function(index, name = colnames(table$model)[index], editable = FALSE, type = c("POSIXct", "numeric", "integer", "character", "logical", "factor", "icon"), changedHandler = NULL) {
-      type = match.arg(type)
+     
+      if (! type[1] %in% c("POSIXct", "numeric", "integer", "character", "logical", "factor", "icon"))
+        stop("Column of type ", type[1], " is not supported")
       
       ## define cell renderer
       if (editable)
